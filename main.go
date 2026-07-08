@@ -677,9 +677,13 @@ func guard(next http.Handler) http.Handler {
 				writeJSON(w, 415, map[string]any{"error": "Content-Type must be application/json"})
 				return
 			}
+			// The Origin must be this server: same as the Host, or itself an
+			// allowed host. The latter covers proxies that rewrite Host to the
+			// backend's (Vite dev on :5173, a reverse proxy in front) — the page
+			// still originates from an address the operator has sanctioned.
 			if o := r.Header.Get("Origin"); o != "" && o != "null" {
 				u, err := url.Parse(o)
-				if err != nil || !strings.EqualFold(u.Host, r.Host) {
+				if err != nil || (!strings.EqualFold(u.Host, r.Host) && !hostAllowed(u.Hostname(), extra)) {
 					writeJSON(w, 403, map[string]any{"error": "cross-origin request rejected"})
 					return
 				}

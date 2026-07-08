@@ -662,6 +662,11 @@ func TestGuardHostAndOrigin(t *testing.T) {
 	if code := do("POST", "localhost:8787", "http://localhost:8787", "application/json"); code != 200 {
 		t.Errorf("same-origin JSON POST should pass, got %d", code)
 	}
+	// A proxy that rewrites Host (Vite dev, reverse proxies): the Origin differs
+	// from Host but is itself an allowed host, so it must pass.
+	if code := do("POST", "localhost:8787", "http://localhost:5173", "application/json"); code != 200 {
+		t.Errorf("allowed-host origin behind a host-rewriting proxy should pass, got %d", code)
+	}
 	if code := do("POST", "localhost:8787", "", "application/json; charset=utf-8"); code != 200 {
 		t.Errorf("originless JSON POST (curl) should pass, got %d", code)
 	}

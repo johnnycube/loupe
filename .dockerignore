@@ -1,0 +1,10 @@
+# The UI is rebuilt inside the image, and these are never needed in the context.
+.git
+.github
+frontend/node_modules
+frontend/.svelte-kit
+frontend/build
+data
+loupe
+*.log
+README.md

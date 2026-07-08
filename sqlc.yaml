@@ -1,0 +1,39 @@
+# sqlc generates typed query code for three engines from one binary. Each block
+# has its own schema + queries (the dialects differ — placeholders, upserts, key
+# column types) but identical query *names*, and all use sql_package
+# "database/sql" so the generated signatures line up across engines. The repo
+# adapters (internal/repo) bridge each generated package to the domain structs.
+#
+# Regenerate with `make sqlc` (pins sqlc v1.31.1). Generated code is committed.
+version: "2"
+sql:
+  - engine: "sqlite"
+    schema: "internal/db/sqlite/migrations"
+    queries: "internal/db/sqlite/query.sql"
+    gen:
+      go:
+        package: "sqlite"
+        out: "internal/db/sqlite"
+        sql_package: "database/sql"
+        emit_json_tags: false
+        emit_interface: false
+  - engine: "postgresql"
+    schema: "internal/db/postgres/migrations"
+    queries: "internal/db/postgres/query.sql"
+    gen:
+      go:
+        package: "postgres"
+        out: "internal/db/postgres"
+        sql_package: "database/sql"
+        emit_json_tags: false
+        emit_interface: false
+  - engine: "mysql"
+    schema: "internal/db/mysql/migrations"
+    queries: "internal/db/mysql/query.sql"
+    gen:
+      go:
+        package: "mysql"
+        out: "internal/db/mysql"
+        sql_package: "database/sql"
+        emit_json_tags: false
+        emit_interface: false

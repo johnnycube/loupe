@@ -1,0 +1,37 @@
+{
+  "//": "Global gallery-dl config. Loupe shells out to gallery-dl, which reads this file itself — put credentials, cookies and rate limits here once and every source picks them up. Location: ~/.config/gallery-dl/config.json (in Docker: mount at /app/.config/gallery-dl/config.json). Full reference: https://gdl-org.github.io/docs/configuration.html",
+
+  "extractor": {
+    "//": "Per-site credentials. Remove the sections you don't use.",
+
+    "reddit": {
+      "//": "Anonymous access works but is heavily rate-limited; a registered OAuth client id is recommended.",
+      "client-id": "YOUR_REDDIT_CLIENT_ID",
+      "user-agent": "Python:loupe:v1.0 (by /u/YOUR_USERNAME)"
+    },
+
+    "rule34": {
+      "api-key": "YOUR_API_KEY",
+      "user-id": "YOUR_USER_ID"
+    },
+
+    "flickr": {
+      "api-key": "YOUR_FLICKR_API_KEY",
+      "api-secret": "YOUR_FLICKR_API_SECRET"
+    },
+
+    "pixiv": {
+      "refresh-token": "YOUR_PIXIV_REFRESH_TOKEN"
+    },
+
+    "twitter": {
+      "//": "Most feeds need a logged-in session; export cookies from your browser.",
+      "cookies": "~/.config/gallery-dl/twitter-cookies.txt"
+    }
+  },
+
+  "downloader": {
+    "//": "Be polite to the sites you poll.",
+    "rate": "1M"
+  }
+}

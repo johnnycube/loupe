@@ -1,0 +1,43 @@
+# Production deployment of Loupe with the default embedded SQLite.
+#
+#   docker compose up -d        →  http://localhost:8787
+#
+# State (sources, items, decisions) persists in the `loupe-data` volume.
+# Credentials for sites that need them go into a gallery-dl config mounted
+# read-only into the container (see gallery-dl-config.example.json next to
+# this file).
+services:
+  loupe:
+    image: ghcr.io/johnnycube/loupe:latest
+    container_name: loupe
+    restart: unless-stopped
+    ports:
+      # Loupe has NO authentication. Keep the bind local (127.0.0.1) and reach
+      # it via SSH tunnel/VPN, or put an authenticating reverse proxy in front
+      # and set LOUPE_ALLOWED_HOSTS to its domain.
+      - "127.0.0.1:8787:8787"
+    volumes:
+      - loupe-data:/app/data
+      # Global gallery-dl config (credentials, cookies, rate limits) — optional:
+      # - ./gallery-dl:/app/.config/gallery-dl:ro
+    # environment:
+    #   LOUPE_POLL_MINUTES: 15
+    #   LOUPE_ALLOWED_HOSTS: loupe.example.com   # when behind a reverse proxy
+    #   # External database instead of embedded SQLite:
+    #   LOUPE_DB_DRIVER: postgres
+    #   LOUPE_DB_DSN: postgres://loupe:change-me@db:5432/loupe?sslmode=disable
+
+  # Optional Postgres backend — uncomment this service and the env vars above.
+  # db:
+  #   image: postgres:18
+  #   restart: unless-stopped
+  #   environment:
+  #     POSTGRES_USER: loupe
+  #     POSTGRES_PASSWORD: change-me
+  #     POSTGRES_DB: loupe
+  #   volumes:
+  #     - loupe-pgdata:/var/lib/postgresql
+
+volumes:
+  loupe-data:
+  # loupe-pgdata:

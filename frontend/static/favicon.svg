@@ -1,0 +1,48 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="64" y1="40" x2="448" y2="480" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#1B212C"/>
+      <stop offset="1" stop-color="#0A0C11"/>
+    </linearGradient>
+    <linearGradient id="gold" x1="120" y1="96" x2="320" y2="320" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#F6CE72"/>
+      <stop offset="0.5" stop-color="#E8B14C"/>
+      <stop offset="1" stop-color="#C2862C"/>
+    </linearGradient>
+    <linearGradient id="goldHandle" x1="300" y1="290" x2="410" y2="400" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#E8B14C"/>
+      <stop offset="1" stop-color="#B5791F"/>
+    </linearGradient>
+    <radialGradient id="glass" cx="0.42" cy="0.38" r="0.72">
+      <stop offset="0" stop-color="#222C3A"/>
+      <stop offset="0.65" stop-color="#121823"/>
+      <stop offset="1" stop-color="#090C12"/>
+    </radialGradient>
+    <clipPath id="lensClip"><circle cx="212" cy="200" r="100"/></clipPath>
+  </defs>
+
+  <!-- app squircle -->
+  <rect x="0" y="0" width="512" height="512" rx="116" fill="url(#bg)"/>
+  <rect x="3" y="3" width="506" height="506" rx="113" fill="none" stroke="#2A3140" stroke-width="2"/>
+
+  <!-- handle (tucked under the ring) -->
+  <rect x="298" y="273" width="156" height="46" rx="23" fill="url(#goldHandle)" transform="rotate(45 298 296)"/>
+
+  <!-- lens glass -->
+  <circle cx="212" cy="200" r="100" fill="url(#glass)"/>
+
+  <!-- magnified "photo" hint inside the glass -->
+  <g clip-path="url(#lensClip)" opacity="0.9">
+    <circle cx="176" cy="172" r="20" fill="#E8B14C" opacity="0.55"/>
+    <path d="M120 286 L186 214 L226 254 L270 206 L312 286 Z" fill="#2FBF87" opacity="0.42"/>
+    <path d="M196 286 L256 222 L312 286 Z" fill="#E8B14C" opacity="0.30"/>
+  </g>
+
+  <!-- glint -->
+  <ellipse cx="172" cy="156" rx="40" ry="20" fill="#FFFFFF" opacity="0.18" transform="rotate(-40 172 156)"/>
+  <circle cx="150" cy="146" r="7" fill="#FFFFFF" opacity="0.5"/>
+
+  <!-- lens ring (annulus) -->
+  <path fill-rule="evenodd" fill="url(#gold)"
+        d="M212 66 a134 134 0 1 0 0.1 0 Z M212 102 a98 98 0 1 1 -0.1 0 Z"/>
+</svg>

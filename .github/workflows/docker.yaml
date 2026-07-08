@@ -1,0 +1,122 @@
+# CI for Loupe. Two stages:
+#   1. test  — gofmt + vet + race-tested Go suite. Runs on every push, PR and
+#              dispatch.
+#   2. build — builds the production image to validate the Dockerfile, frontend
+#              build and Go compile. Pushes to GitHub Container Registry (ghcr.io)
+#              ONLY on the default branch (main) or a release tag (v*); PRs and
+#              other branches build for validation but never publish.
+#
+# Publishing needs no configured secrets — the workflow authenticates to ghcr.io
+# with the built-in GITHUB_TOKEN via the `packages: write` permission.
+name: Docker
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+  workflow_dispatch:
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  # Full test pass — gates the build job via `needs`. Runs for every trigger,
+  # so pull requests are properly checked before anything is built or pushed.
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+          cache: true # cache the module + build cache (pgx/mysql/sqlite deps)
+
+      # Fail fast on unformatted code — `gofmt -l` lists offending files, so a
+      # non-empty result means the tree isn't `gofmt`-clean.
+      - name: gofmt
+        run: |
+          unformatted=$(gofmt -l .)
+          if [ -n "$unformatted" ]; then
+            echo "These files are not gofmt-clean:"; echo "$unformatted"
+            exit 1
+          fi
+
+      - name: go vet
+        run: go vet ./...
+
+      # Run the whole suite with the race detector. -shuffle=on surfaces hidden
+      # inter-test ordering dependencies; -count=1 disables the test result cache
+      # so every push actually executes the tests; coverage is written for the
+      # whole module. (Race needs a C toolchain on the runner.)
+      - name: go test (race detector)
+        run: go test -race -shuffle=on -count=1 -coverprofile=coverage.out ./...
+
+  build:
+    needs: test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write # push to ghcr.io with the built-in GITHUB_TOKEN
+    env:
+      # Publish only from the default branch or a release tag. Everything else
+      # (PRs, feature branches, manual dispatch off main) builds but never pushes.
+      PUSH: ${{ github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v') }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Set up Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Log in to GitHub Container Registry
+        if: env.PUSH == 'true'
+        uses: docker/login-action@v4
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # Git metadata for the About page, injected into the binary via build args
+      # (the Dockerfile has no .git context, so Go can't auto-stamp VCS info).
+      # Mirrors the Makefile's LDFLAGS: short commit, exact tag (empty otherwise),
+      # and a UTC build timestamp.
+      - name: Build metadata
+        id: build_meta
+        run: |
+          {
+            echo "commit=$(git rev-parse --short HEAD)"
+            echo "tag=${{ startsWith(github.ref, 'refs/tags/v') && github.ref_name || '' }}"
+            echo "build_time=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Docker metadata (tags & labels)
+        id: meta
+        uses: docker/metadata-action@v6
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=ref,event=tag
+            type=sha,format=short
+
+      # Always builds (validates Dockerfile + frontend + Go compile). `push` and
+      # the registry cache export are gated on PUSH so non-release runs never
+      # touch the registry.
+      - name: Build and push
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          push: ${{ env.PUSH == 'true' }}
+          build-args: |
+            GIT_COMMIT=${{ steps.build_meta.outputs.commit }}
+            GIT_TAG=${{ steps.build_meta.outputs.tag }}
+            BUILD_TIME=${{ steps.build_meta.outputs.build_time }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: ${{ env.PUSH == 'true' && 'type=gha,mode=max' || '' }}

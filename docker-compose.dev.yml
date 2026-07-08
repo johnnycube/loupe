@@ -1,0 +1,33 @@
+# Local dev database for Loupe. Loupe itself runs on the host (`make dev`) and
+# connects via LOUPE_DB_DRIVER=postgres / LOUPE_DB_DSN (see .env.example).
+# Production uses the embedded SQLite default and does not need this file.
+#
+#   make db-up      # start Postgres 18
+#   make import     # transfer data/store.json into it
+#   make dev        # run Loupe against it
+#   make db-down    # stop (the named volume keeps the data)
+
+services:
+  postgres:
+    image: postgres:18
+    container_name: loupe-postgres
+    environment:
+      POSTGRES_USER: loupe
+      POSTGRES_PASSWORD: loupe
+      POSTGRES_DB: loupe
+    ports:
+      # Host 5433 (not the default 5432) to avoid clashing with any other local
+      # Postgres. Match this in LOUPE_DB_DSN / .env.
+      - "5433:5432"
+    volumes:
+      # postgres:18 manages a major-version subdir itself, so the mount goes at
+      # /var/lib/postgresql (not .../data as in <=17).
+      - loupe-pgdata:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U loupe -d loupe"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  loupe-pgdata:

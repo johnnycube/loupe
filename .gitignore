@@ -1,0 +1,54 @@
+# ---- Go build output ----
+/loupe
+/loupe-*
+*.exe
+*.test
+*.out
+
+# ---- Local state & secrets ----
+# data/ holds the embedded SQLite DB (loupe.db*) and any legacy store.json —
+# sources, decisions AND per-source gallery-dl credentials. Never commit it.
+/data/*
+!/data/.gitkeep
+
+# ---- Frontend dependencies & caches ----
+/frontend/node_modules/
+/frontend/.svelte-kit/
+/frontend/.vite/
+
+# ---- Frontend build output (NOT committed) ----
+# The compiled UI is fully reproducible from frontend/src + frontend/static, so
+# it's a build artifact. //go:embed needs the directory to exist at compile time,
+# so one placeholder file is kept and everything else is ignored. Build it with
+# `make build-frontend` before `go build`/`go test` (Docker and CI do this).
+/frontend/build/*
+!/frontend/build/.gitkeep
+
+# ---- Logs & local env ----
+*.log
+.env
+.env.*
+!.env.example
+
+# ---- AI assistant local state ----
+# Shared config (e.g. a committed AGENTS.md or .claude/settings.json) stays in
+# git; per-user state, local overrides and scratch dirs do not.
+.claude/settings.local.json
+CLAUDE.local.md
+.aider*
+.cursor/
+.windsurf/
+.continue/
+.codex/
+.gemini/
+.opencode/
+.crush/
+.roo/
+.cline/
+
+# ---- Editor / OS cruft ----
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp

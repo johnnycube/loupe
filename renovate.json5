@@ -1,0 +1,29 @@
+{
+  $schema: 'https://docs.renovatebot.com/renovate-schema.json',
+
+  // Sensible Renovate defaults (dependency dashboard, grouping, etc.).
+  extends: ['config:recommended'],
+
+  // Automerge every update type — patch / minor / major / digest / pin ...
+  automerge: true,
+  // ... but always through a PR, so the CI workflows run first.
+  automergeType: 'pr',
+  // Renovate performs the merge itself once it sees the branch status is green.
+  // `ignoreTests` stays at its default (false), so a pending or failing check
+  // blocks the merge — i.e. "automerge only what passes CI" — and this holds
+  // without requiring branch protection to be configured.
+  platformAutomerge: false,
+
+  packageRules: [
+    {
+      // The SvelteKit toolchain is version-locked as a unit: @sveltejs/kit
+      // controls which @sveltejs/vite-plugin-svelte major it accepts and which
+      // Vite range is supported. Bumping any one in isolation (e.g. the plugin
+      // to v7, which peer-requires Vite 8 while kit still wants the v4 plugin)
+      // produces an unresolvable peer tree and a red, unmergeable PR. Group
+      // them so they only ever move together, once kit supports the new set.
+      matchPackageNames: ['svelte', 'vite', '@sveltejs/**'],
+      groupName: 'SvelteKit toolchain',
+    },
+  ],
+}

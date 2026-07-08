@@ -1,0 +1,37 @@
+# systemd unit for running the Loupe binary directly (no Docker).
+#
+#   sudo useradd -r -m -d /var/lib/loupe loupe
+#   sudo -u loupe pipx install gallery-dl
+#   sudo cp loupe /usr/local/bin/
+#   sudo cp samples/loupe.service /etc/systemd/system/
+#   sudo systemctl enable --now loupe
+#
+# State lives in /var/lib/loupe/data (WorkingDirectory + the SQLite default).
+# gallery-dl credentials go in /var/lib/loupe/.config/gallery-dl/config.json.
+
+[Unit]
+Description=Loupe gallery watcher
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=loupe
+WorkingDirectory=/var/lib/loupe
+ExecStart=/usr/local/bin/loupe
+Restart=on-failure
+
+# Loupe has no authentication — keep it off public interfaces.
+Environment=LOUPE_HTTP_ADDR=127.0.0.1
+Environment=LOUPE_HTTP_PORT=8787
+# pipx installs gallery-dl into the service user's ~/.local/bin
+Environment=PATH=/var/lib/loupe/.local/bin:/usr/local/bin:/usr/bin
+
+# Hardening
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=false
+ReadWritePaths=/var/lib/loupe
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

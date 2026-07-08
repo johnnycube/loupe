@@ -132,6 +132,15 @@ func runGdl(args ...string) (stdout, stderr string, code int, missing bool) {
 	var out, errb bytes.Buffer
 	cmd.Stdout, cmd.Stderr = &out, &errb
 	err := cmd.Run()
+	// A timeout kill must surface as an error: gallery-dl -j prints its dump
+	// only at the end of a run, so a killed run yields empty output and would
+	// otherwise read as a silent "0 new items". Common on the first full scan
+	// of a large HTML-paged gallery — the fix is raising LOUPE_GDL_TIMEOUT_SEC.
+	if ctx.Err() == context.DeadlineExceeded {
+		return out.String(),
+			fmt.Sprintf("gallery-dl timed out after %ds — raise LOUPE_GDL_TIMEOUT_SEC for large/slow galleries", cfg.TimeoutSec),
+			-1, false
+	}
 	if err != nil {
 		var ee *exec.Error
 		if errors.As(err, &ee) && errors.Is(ee.Err, exec.ErrNotFound) {

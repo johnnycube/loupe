@@ -128,7 +128,10 @@ source's error in the UI.
 
 The scheduled poll fetches only the newest `LOUPE_PER_SOURCE` items — cheap,
 catches what's new. Adding a source (or pressing **Rescan**) pages through the
-entire gallery to backfill its history, preserving existing decisions.
+entire gallery to backfill its history, preserving existing decisions. Full
+scans run gallery-dl in windows of 1000 items; sites that paginate slowly can
+exceed the default 120s window timeout — the source then shows a *timed out*
+error, and raising `LOUPE_GDL_TIMEOUT_SEC` (e.g. to `600`) fixes it.
 
 ## Development
 

@@ -620,6 +620,25 @@ func TestStats(t *testing.T) {
 	}
 }
 
+func TestRunGdlTimeoutSurfaces(t *testing.T) {
+	// A run killed by the timeout must produce a visible error message, not an
+	// empty stderr that reads as "0 new items" (gallery-dl -j prints its dump
+	// only at the end of a run, so a killed run has no usable stdout).
+	oldGDL, oldTO := cfg.GDL, cfg.TimeoutSec
+	defer func() { cfg.GDL, cfg.TimeoutSec = oldGDL, oldTO }()
+	cfg.GDL, cfg.TimeoutSec = "sleep", 1
+	_, errs, code, missing := runGdl("5")
+	if missing || code == 0 {
+		t.Fatalf("timed-out run should fail: code=%d missing=%v", code, missing)
+	}
+	if !strings.Contains(errs, "timed out") || !strings.Contains(errs, "LOUPE_GDL_TIMEOUT_SEC") {
+		t.Errorf("timeout must surface an actionable message, got %q", errs)
+	}
+	if msg := pageError("", errs, code); !strings.Contains(msg, "timed out") {
+		t.Errorf("pageError should propagate the timeout, got %q", msg)
+	}
+}
+
 /* ----------------------------------------------------------- security guard */
 
 func TestGuardHostAndOrigin(t *testing.T) {

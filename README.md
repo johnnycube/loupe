@@ -7,6 +7,10 @@ swipe-to-decide UI. Keeps go to **Selects** (exportable as a URL list or zip),
 passes disappear. Your decisions persist, so you only ever look at anything
 once.
 
+<p align="center">
+  <img src="docs/screenshot-desktop.png" alt="Reviewing new images in Loupe: scope sidebar on the left, current card with keep/pass actions on the right" width="800">
+</p>
+
 Typical uses:
 
 - You follow thirty artists across DeviantArt, Pixiv and ArtStation. Instead of

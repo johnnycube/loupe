@@ -111,11 +111,31 @@ export function setScope(v) {
   S.scope = v;
   startReview();
 }
+// Optimistically mirror a decision into the cached per-source and
+// per-collection counts, so the scope chips count down while reviewing without
+// refetching the whole library on every swipe. The next loadLibrary() re-syncs
+// from the server. `revert` undoes the same adjustment (for undo).
+function applyDecisionToCounts(item, decision, revert = false) {
+  const d = revert ? -1 : 1;
+  const from = item.gone ? 'staleNew' : 'new'; // stale items count separately
+  const to = decision === 'good' ? 'good' : 'bad';
+  const adj = (c) => {
+    if (!c) return;
+    c[from] = Math.max(0, (c[from] || 0) - d);
+    c[to] = Math.max(0, (c[to] || 0) + d);
+  };
+  adj(S.sources.find((s) => s.id === item.sourceId)?.counts);
+  for (const col of S.collections) {
+    if (col.sourceIds?.includes(item.sourceId)) adj(col.counts);
+  }
+}
 export function vote(decision) {
   const it = S.queue[0];
   if (!it) return;
   S.queue = S.queue.slice(1);
-  S.history = [...S.history, it].slice(-50);
+  // remember the decision so undo can reverse the optimistic count change
+  S.history = [...S.history, { ...it, _decision: decision }].slice(-50);
+  applyDecisionToCounts(it, decision);
   api.post('/api/vote', { id: it.id, decision }).then(refreshStats);
   if (S.queue.length < 5) fill();
   preloadAhead(); // window moved forward → warm the newly-revealed card(s)
@@ -125,6 +145,7 @@ export function undo() {
   if (!last) return;
   S.history = S.history.slice(0, -1);
   S.queue = [last, ...S.queue.filter((q) => q.id !== last.id)];
+  if (last._decision) applyDecisionToCounts(last, last._decision, true);
   api.post('/api/unvote', { id: last.id }).then(refreshStats);
   preloadAhead();
 }

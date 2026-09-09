@@ -8,7 +8,7 @@
 # Base images are pinned to an explicit version AND digest for reproducible
 # builds: the version tag documents what we run, the digest enforces it. Bump
 # both together when updating.
-FROM node:24.20.0-alpine3.24@sha256:e67514e5d0f6c46656005e1b693b2ec9d52e80b641307de684d4a015ba7a4eaf AS frontend
+FROM node:24.21.0-alpine3.24@sha256:be80f76cf40ec8e42b9bec49f60a55e0660f30af58d3e5a25530785b30ea67e2 AS frontend
 WORKDIR /app/frontend
 # Install deps from the lockfile first so this layer caches across UI edits.
 COPY frontend/package.json frontend/package-lock.json ./

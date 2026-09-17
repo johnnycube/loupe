@@ -45,7 +45,7 @@ RUN CGO_ENABLED=0 GOOS=linux go build -trimpath \
 FROM python:3.14.7-alpine3.24@sha256:c6ead215bfd31f1e433d968853b7a769989117115b728874824e6c0a27cb96fc
 # gallery-dl is the runtime extractor; ffmpeg lets it mux some video sources.
 # Versions are pinned for reproducibility — bump deliberately, not by drift.
-RUN apk add --no-cache ffmpeg=8.1.2-r0 ca-certificates=20260611-r0 \
+RUN apk add --no-cache ffmpeg=8.1.2-r0 ca-certificates=20260909-r0 \
     && pip install --no-cache-dir gallery-dl==1.32.3 \
     && adduser -D -h /app loupe
 WORKDIR /app

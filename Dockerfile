@@ -42,7 +42,7 @@ RUN CGO_ENABLED=0 GOOS=linux go build -trimpath \
     -o /out/loupe .
 
 # ---- 3. runtime: slim image + gallery-dl -------------------------------------
-FROM python:3.14.7-alpine3.24@sha256:016508ba505da24f7139765bc4bb669df4e88eb2f12eeadd571bf2f88d7533df
+FROM python:3.14.7-alpine3.24@sha256:9e9fde4d32eedce0b661d9ab91e826b62dddf28e928c230ec55f1866cac66b01
 # gallery-dl is the runtime extractor; ffmpeg lets it mux some video sources.
 # Versions are pinned for reproducibility — bump deliberately, not by drift.
 RUN apk add --no-cache ffmpeg=8.1.2-r0 ca-certificates=20260909-r0 \

@@ -17,7 +17,7 @@ COPY frontend/ ./
 RUN npm run build          # -> /app/frontend/build (static, embedded next)
 
 # ---- 2. compile the single Go binary (embeds the UI) -------------------------
-FROM golang:1.27.2-alpine3.24@sha256:85dc1069ac644ea3c527b177303a406eb3358192816cd7f9e5848eb658851673 AS backend
+FROM golang:1.27.2-alpine3.24@sha256:f92b6ef800e499660581efdabdf25d9d817a9d124eaf900924f0504e7e27e12d AS backend
 WORKDIR /src
 # Download modules first so this layer caches across source edits.
 COPY go.mod go.sum ./

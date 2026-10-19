@@ -6,10 +6,16 @@ what it does and how it's deployed.
 
 ## Commands
 
-- `make test` — Go suite; no network, no gallery-dl, no DB service needed
-  (tests swap in in-memory SQLite).
-- `make test-race` / `make vet` — CI runs both, plus a `gofmt -l` gate:
-  unformatted Go fails the build.
+- `make tools` — installs the pinned dev tools (golangci-lint, govulncheck,
+  gitleaks, fleetlint) and the frontend deps. Needs `$(go env GOPATH)/bin` on PATH.
+- `make test` — Go suite with the race detector; no network, no gallery-dl, no
+  DB service needed (tests swap in in-memory SQLite).
+- `make fmt` / `make lint` — gofumpt+goimports and prettier; golangci-lint,
+  eslint, prettier --check and svelte-check with warnings as errors.
+- `make check-fast` — lint + the Go suite (the pre-commit gate).
+- `make check` — definition of green, what CI runs: lint, test, `cover`
+  (coverage floor `COVER_MIN`, a ratchet), `audit` (govulncheck, npm audit,
+  gitleaks, `go mod tidy -diff`), build, `fleetlint check`.
 - `make run` — backend on :8787 with embedded SQLite at `data/loupe.db`.
 - `cd frontend && npm run dev` — UI on :5173, proxies `/api` to :8787.
 - `make build` — frontend build + `go build` in one step.
@@ -25,6 +31,15 @@ what it does and how it's deployed.
   `*.sql.go` by hand. Schema changes are goose migrations, one per engine.
 - `frontend/src/` — routes in `routes/[...path]/+page.svelte`, shared state in
   `lib/state.svelte.js` (Svelte 5 runes).
+
+## Lint baseline
+
+- `.golangci.yml` lists functions that were over the gocognit/funlen limits
+  when the linter was adopted. That list only shrinks: remove a name when you
+  split the function, never add one. New `//nolint` needs a specific linter
+  and a reason (nolintlint enforces both).
+- Commits follow Conventional Commits (hook-enforced); `cliff.toml` builds
+  CHANGELOG.md from them.
 
 ## Invariants
 

@@ -136,15 +136,21 @@ error, and raising `LOUPE_GDL_TIMEOUT_SEC` (e.g. to `600`) fixes it.
 ## Development
 
 ```sh
+make tools           # pinned dev tools + frontend deps (once)
 make test            # Go suite — no network, no gallery-dl needed
+make check           # everything CI runs: lint, tests, coverage, audit, build
 make run             # backend on :8787
 cd frontend && npm run dev   # UI on :5173 with hot reload, proxies /api
 ```
 
 The UI is SvelteKit (Svelte 5) built to static files and embedded into the Go
 binary — production needs no Node. `make build` does frontend + binary in one
-step; CI (`.github/workflows/docker.yaml`) tests, builds and publishes the
-image to ghcr.io on pushes to `main` and `v*` tags.
+step. CI runs `make check` (`.github/workflows/check.yml`) and builds the
+image (`.github/workflows/docker.yaml`), publishing it to ghcr.io on pushes to
+`main` and `v*` tags; published images are signed with cosign (keyless
+Sigstore), see the workflow for the `cosign verify` incantation. Contributor
+mechanics are in [CONTRIBUTING.md](CONTRIBUTING.md), the design in
+[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
 ## License
 

@@ -2,6 +2,9 @@ module github.com/johnnycube/loupe
 
 go 1.26.0
 
+// eslint's dependency tree ships a Go package under node_modules; keep it out of ./...
+ignore ./frontend/node_modules
+
 require (
 	github.com/go-sql-driver/mysql v1.10.1
 	github.com/jackc/pgx/v5 v5.11.0

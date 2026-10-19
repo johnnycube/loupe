@@ -21,6 +21,8 @@ commit_parsers = [
   { message = "^refactor", group = "<!-- 3 -->Changed" },
   { message = "^docs", group = "<!-- 4 -->Documentation" },
   { message = "^(chore\\(release\\)|chore\\(deps\\)|build\\(deps\\))", skip = true },
+  { message = "^build", group = "<!-- 5 -->Build" },
+  { message = "^ci", group = "<!-- 6 -->CI" },
   { message = "^(test|chore|build|ci|style|revert)", skip = true },
 ]
 tag_pattern = "v[0-9].*"

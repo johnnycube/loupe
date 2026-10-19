@@ -20,14 +20,16 @@ import (
 	"path/filepath"
 	"strings"
 
-	_ "github.com/go-sql-driver/mysql"
-	_ "github.com/jackc/pgx/v5/stdlib"
+	_ "github.com/go-sql-driver/mysql" // registers the "mysql" database/sql driver
+	_ "github.com/jackc/pgx/v5/stdlib" // registers the "pgx" database/sql driver
 	"github.com/pressly/goose/v3"
-	_ "modernc.org/sqlite"
+	_ "modernc.org/sqlite" // registers the "sqlite" database/sql driver
 )
 
 /* ------------------------------------------------------------------ model */
 
+// Source is a watched gallery URL. Decisions are per (source, image): the same
+// image under two sources is two independent items.
 type Source struct {
 	ID          string `json:"id"`          // uuid — identity on the programming side
 	Name        string `json:"name"`        // human label
@@ -92,6 +94,7 @@ type StatusGoneCount struct {
 	N      int
 }
 
+// SourceStatusGoneCount is one row of the per-source status/gone tally.
 type SourceStatusGoneCount struct {
 	SourceID string
 	Status   string
@@ -226,7 +229,7 @@ func ensureParentDir(dsn string) error {
 	if dir == "" || dir == "." {
 		return nil
 	}
-	return os.MkdirAll(dir, 0o755)
+	return os.MkdirAll(dir, 0o750)
 }
 
 // runMigrations brings the database up to the latest schema using goose against

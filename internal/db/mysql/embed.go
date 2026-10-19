@@ -1,3 +1,5 @@
+// Package mysql holds the sqlc-generated query code and the goose migrations
+// for the MySQL/MariaDB backend.
 package mysql
 
 import "embed"

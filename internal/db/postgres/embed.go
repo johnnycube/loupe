@@ -1,3 +1,5 @@
+// Package postgres holds the sqlc-generated query code and the goose migrations
+// for the PostgreSQL backend.
 package postgres
 
 import "embed"

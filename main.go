@@ -1,3 +1,5 @@
+// Loupe watches image galleries through gallery-dl and serves a swipe-to-decide
+// review UI from a single binary. See README.md and docs/ARCHITECTURE.md.
 package main
 
 import (
@@ -45,6 +47,7 @@ func env(k, d string) string {
 	}
 	return d
 }
+
 func envInt(k string, d int) int {
 	if v := os.Getenv(k); v != "" {
 		if n, err := strconv.Atoi(v); err == nil {
@@ -128,7 +131,7 @@ var gdlInfo = struct {
 func runGdl(args ...string) (stdout, stderr string, code int, missing bool) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(cfg.TimeoutSec)*time.Second)
 	defer cancel()
-	cmd := exec.CommandContext(ctx, cfg.GDL, args...)
+	cmd := exec.CommandContext(ctx, cfg.GDL, args...) //nolint:gosec // argument vector, no shell; cfg.GDL is the operator's LOUPE_GALLERY_DL
 	var out, errb bytes.Buffer
 	cmd.Stdout, cmd.Stderr = &out, &errb
 	err := cmd.Run()
@@ -173,6 +176,7 @@ func mstr(md map[string]any, keys ...string) string {
 	}
 	return ""
 }
+
 func mnum(md map[string]any, keys ...string) float64 {
 	for _, k := range keys {
 		if f, ok := md[k].(float64); ok {
@@ -181,6 +185,7 @@ func mnum(md map[string]any, keys ...string) float64 {
 	}
 	return 0
 }
+
 func mkey(md map[string]any) string {
 	for _, k := range []string{"md5", "id"} {
 		if v, ok := md[k]; ok {
@@ -369,12 +374,14 @@ func pick(a, b string) string {
 	}
 	return b
 }
+
 func trunc(s string, n int) string {
 	if len(s) > n {
 		return s[:n]
 	}
 	return s
 }
+
 func lastLine(s string) string {
 	lines := strings.Split(strings.TrimSpace(s), "\n")
 	for i := len(lines) - 1; i >= 0; i-- {
@@ -409,7 +416,7 @@ func buildConfigArgs(cfgFile, cfgJSON, cfgID string) (pre []string, cleanup func
 	var tmps []string
 	cleanup = func() {
 		for _, n := range tmps {
-			os.Remove(n)
+			_ = os.Remove(n)
 		}
 	}
 	// stage writes a JSON body to a temp file and records it for cleanup.
@@ -420,9 +427,9 @@ func buildConfigArgs(cfgFile, cfgJSON, cfgID string) (pre []string, cleanup func
 		}
 		name := tmp.Name()
 		_, werr := tmp.WriteString(body)
-		tmp.Close()
+		_ = tmp.Close()
 		if werr != nil {
-			os.Remove(name)
+			_ = os.Remove(name)
 			return "", werr
 		}
 		tmps = append(tmps, name)
@@ -488,8 +495,10 @@ func mergeExtracted(id, label string, items []extracted) (added int) {
 	err := store.WithinTx(ctx, func(tx repo.Repo) error {
 		for _, it := range items {
 			itemID := makeID(id, it.imageKey) // per-source key
-			ins, err := tx.InsertItemIfNew(ctx, &Item{ID: itemID, SourceID: id, Label: label, ImageKey: it.imageKey,
-				URL: it.url, Sample: it.sample, Title: it.title, Status: "new", AddedAt: now(), LastSeen: now()})
+			ins, err := tx.InsertItemIfNew(ctx, &Item{
+				ID: itemID, SourceID: id, Label: label, ImageKey: it.imageKey,
+				URL: it.url, Sample: it.sample, Title: it.title, Status: "new", AddedAt: now(), LastSeen: now(),
+			})
 			if err != nil {
 				return err
 			}
@@ -719,11 +728,13 @@ func writeJSON(w http.ResponseWriter, code int, v any) {
 	w.WriteHeader(code)
 	_ = json.NewEncoder(w).Encode(v)
 }
+
 func readJSON(r *http.Request) map[string]any {
 	m := map[string]any{}
 	_ = json.NewDecoder(r.Body).Decode(&m)
 	return m
 }
+
 func str(m map[string]any, k string) string {
 	if v, ok := m[k].(string); ok {
 		return v
@@ -796,8 +807,10 @@ func itemDTO(it *Item, names map[string]string) map[string]any {
 	if n, ok := names[it.SourceID]; ok {
 		name = n
 	}
-	return map[string]any{"id": it.ID, "sourceId": it.SourceID, "label": name,
-		"url": it.URL, "sample": it.Sample, "title": it.Title, "status": it.Status, "gone": it.Gone}
+	return map[string]any{
+		"id": it.ID, "sourceId": it.SourceID, "label": name,
+		"url": it.URL, "sample": it.Sample, "title": it.Title, "status": it.Status, "gone": it.Gone,
+	}
 }
 
 /* ------------------------------------------------------------- handlers */
@@ -853,10 +866,12 @@ func handleSources(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		id := uuid()
-		err := store.InsertSource(ctx, &Source{ID: id, Name: trunc(name, 80),
+		err := store.InsertSource(ctx, &Source{
+			ID: id, Name: trunc(name, 80),
 			Description: trunc(str(b, "description"), 400), URL: url,
 			ConfigFile: trunc(strings.TrimSpace(str(b, "configFile")), 400),
-			ConfigJSON: cfgJSON, ConfigID: strings.TrimSpace(str(b, "configId")), AddedAt: now()})
+			ConfigJSON: cfgJSON, ConfigID: strings.TrimSpace(str(b, "configId")), AddedAt: now(),
+		})
 		if dbFail(w, err) {
 			return
 		}
@@ -898,10 +913,12 @@ func handleSources(w http.ResponseWriter, r *http.Request) {
 		if c == nil {
 			c = newCounts()
 		}
-		out = append(out, map[string]any{"id": s.ID, "name": s.Name, "description": s.Description,
+		out = append(out, map[string]any{
+			"id": s.ID, "name": s.Name, "description": s.Description,
 			"url": s.URL, "configFile": s.ConfigFile, "configJson": s.ConfigJSON, "configId": s.ConfigID,
 			"lastPoll": s.LastPoll, "lastError": s.LastError,
-			"counts": c, "collections": inCol[s.ID]})
+			"counts": c, "collections": inCol[s.ID],
+		})
 	}
 	sort.Slice(out, func(i, j int) bool { return out[i]["name"].(string) < out[j]["name"].(string) })
 	writeJSON(w, 200, out)
@@ -1031,8 +1048,10 @@ func handleCollections(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		id := uuid()
-		err := store.InsertCollection(ctx, &Collection{ID: id, Name: trunc(name, 80),
-			Description: trunc(str(b, "description"), 400), SourceIDs: []string{}, AddedAt: now()})
+		err := store.InsertCollection(ctx, &Collection{
+			ID: id, Name: trunc(name, 80),
+			Description: trunc(str(b, "description"), 400), SourceIDs: []string{}, AddedAt: now(),
+		})
 		if dbFail(w, err) {
 			return
 		}
@@ -1083,8 +1102,10 @@ func handleCollections(w http.ResponseWriter, r *http.Request) {
 			}
 			members = append(members, map[string]any{"id": sid, "name": name})
 		}
-		out = append(out, map[string]any{"id": col.ID, "name": col.Name, "description": col.Description,
-			"sourceIds": col.SourceIDs, "members": members, "counts": agg})
+		out = append(out, map[string]any{
+			"id": col.ID, "name": col.Name, "description": col.Description,
+			"sourceIds": col.SourceIDs, "members": members, "counts": agg,
+		})
 	}
 	sort.Slice(out, func(i, j int) bool { return out[i]["name"].(string) < out[j]["name"].(string) })
 	writeJSON(w, 200, out)
@@ -1424,7 +1445,7 @@ func handleUnselect(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, 200, map[string]any{"ok": true})
 }
 
-func handlePoll(w http.ResponseWriter, r *http.Request) {
+func handlePoll(w http.ResponseWriter, _ *http.Request) {
 	added, missing := pollAll()
 	writeJSON(w, 200, map[string]any{"added": added, "missing": missing})
 }
@@ -1441,7 +1462,7 @@ func handleSelectsTxt(w http.ResponseWriter, r *http.Request) {
 		urls = append(urls, it.URL)
 	}
 	w.Header().Set("Content-Type", "text/plain")
-	io.WriteString(w, strings.Join(urls, "\n"))
+	_, _ = io.WriteString(w, strings.Join(urls, "\n"))
 }
 
 func handleSelectsZip(w http.ResponseWriter, r *http.Request) {
@@ -1458,14 +1479,18 @@ func handleSelectsZip(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/zip")
 	w.Header().Set("Content-Disposition", `attachment; filename="loupe-selects.zip"`)
 	zw := zip.NewWriter(w)
-	defer zw.Close()
+	defer func() { _ = zw.Close() }()
 	used := map[string]int{}
 	client := &http.Client{Timeout: 60 * time.Second}
 	for _, it := range good {
-		resp, err := client.Get(it.URL)
+		req, err := http.NewRequestWithContext(r.Context(), http.MethodGet, it.URL, nil)
+		if err != nil {
+			continue
+		}
+		resp, err := client.Do(req)
 		if err != nil || resp.StatusCode != 200 {
 			if resp != nil {
-				resp.Body.Close()
+				_ = resp.Body.Close()
 			}
 			continue
 		}
@@ -1475,9 +1500,9 @@ func handleSelectsZip(w http.ResponseWriter, r *http.Request) {
 		}
 		used[name]++
 		if fw, err := zw.Create(name); err == nil {
-			io.Copy(fw, resp.Body)
+			_, _ = io.Copy(fw, resp.Body)
 		}
-		resp.Body.Close()
+		_ = resp.Body.Close()
 	}
 }
 
@@ -1508,9 +1533,9 @@ func runImport(path string) {
 		fmt.Println("db open:", err)
 		os.Exit(1)
 	}
-	defer store.Close()
+	defer func() { _ = store.Close() }()
 
-	b, err := os.ReadFile(path)
+	b, err := os.ReadFile(path) //nolint:gosec // path is the operator's own CLI argument to `loupe import`
 	if err != nil {
 		fmt.Println("read", path, "-", err)
 		os.Exit(1)
@@ -1595,7 +1620,7 @@ func main() {
 		fmt.Println("db open:", err)
 		os.Exit(1)
 	}
-	defer store.Close()
+	defer func() { _ = store.Close() }()
 
 	checkGdl()
 	if gdlInfo.Available {

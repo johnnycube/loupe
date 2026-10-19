@@ -53,6 +53,6 @@ func versionInfo() VersionInfo {
 	return v
 }
 
-func handleVersion(w http.ResponseWriter, r *http.Request) {
+func handleVersion(w http.ResponseWriter, _ *http.Request) {
 	writeJSON(w, 200, versionInfo())
 }

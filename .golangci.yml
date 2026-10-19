@@ -1,0 +1,26 @@
+version: "2"
+run:
+  timeout: 5m
+formatters:
+  enable: [gofumpt, goimports]
+linters:
+  default: none
+  enable: [errcheck, govet, staticcheck, unused, ineffassign, errorlint, nilerr, bodyclose, noctx, gosec, revive, gocognit, funlen, exhaustive, unparam, godox, nolintlint]
+  settings:
+    gocognit: { min-complexity: 15 }
+    funlen: { lines: 60, statements: 40 }
+    nolintlint: { require-explanation: true, require-specific: true }
+  exclusions:
+    paths:
+      - frontend/   # node_modules ships stray .go files
+    rules:
+      - path: _test\.go
+        linters: [funlen, gocognit, gosec]
+      # Baseline: functions that were already over the complexity limits when the
+      # linter was adopted. This list may only shrink — remove a name once the
+      # function has been split, never add one.
+      - linters: [gocognit]
+        text: 'func `(handleCollections|handleCollectionMember|handleNext|runImport|redditPreview|bestRedditRes|parseDump|buildConfigArgs|guard|handleSources|handleSourceUpdate|versionInfo)`'
+      - linters: [funlen]
+        path: main\.go
+        text: "Function '(main|handleCollections|handleSources|runImport)'"

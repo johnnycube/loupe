@@ -1,7 +1,6 @@
 package repo
 
 import (
-	"context"
 	"database/sql"
 	"path/filepath"
 	"testing"
@@ -28,11 +27,13 @@ func TestMigrateLegacyDatabase(t *testing.T) {
 		`CREATE TABLE app_state (id BIGINT PRIMARY KEY, last_poll BIGINT NOT NULL DEFAULT 0, last_added BIGINT NOT NULL DEFAULT 0)`,
 		`INSERT INTO sources (id, name, url) VALUES ('s1', 'Legacy Source', 'https://example.com/g')`,
 	} {
-		if _, err := raw.Exec(ddl); err != nil {
+		if _, err := raw.ExecContext(t.Context(), ddl); err != nil {
 			t.Fatalf("seed legacy db: %v", err)
 		}
 	}
-	raw.Close()
+	if err := raw.Close(); err != nil {
+		t.Fatalf("close legacy db: %v", err)
+	}
 
 	// 2. Open through the repo: goose baselines at 00001 (idempotent, existing
 	//    tables untouched) then applies 00002 (configs + sources.config_id).
@@ -40,8 +41,8 @@ func TestMigrateLegacyDatabase(t *testing.T) {
 	if err != nil {
 		t.Fatalf("open/migrate legacy db: %v", err)
 	}
-	defer r.Close()
-	ctx := context.Background()
+	defer func() { _ = r.Close() }()
+	ctx := t.Context()
 
 	// 3. The legacy row survived and now exposes the new (empty) config_id.
 	s, ok, err := r.GetSource(ctx, "s1")

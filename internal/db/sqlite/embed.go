@@ -1,3 +1,5 @@
+// Package sqlite holds the sqlc-generated query code and the goose migrations
+// for the SQLite backend.
 package sqlite
 
 import "embed"

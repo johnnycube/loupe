@@ -62,8 +62,10 @@ func addSource(id, name, url string) {
 
 func addItem(sourceID, key, status string, gone bool) *Item {
 	id := makeID(sourceID, key)
-	it := &Item{ID: id, SourceID: sourceID, ImageKey: key, Label: "x",
-		URL: "http://img/" + key + ".jpg", Status: status, Gone: gone, AddedAt: now()}
+	it := &Item{
+		ID: id, SourceID: sourceID, ImageKey: key, Label: "x",
+		URL: "http://img/" + key + ".jpg", Status: status, Gone: gone, AddedAt: now(),
+	}
 	if _, err := store.InsertItemIfNew(bg, it); err != nil {
 		panic(err)
 	}
@@ -214,7 +216,8 @@ func TestMakeIDIsPerSource(t *testing.T) {
 	if makeID("srcA", "img1") == makeID("srcB", "img1") {
 		t.Error("makeID collided across sources")
 	}
-	if makeID("srcA", "img1") != makeID("srcA", "img1") {
+	a, b := makeID("srcA", "img1"), makeID("srcA", "img1")
+	if a != b {
 		t.Error("makeID not stable")
 	}
 }
@@ -264,7 +267,7 @@ func TestNextScopeFiltering(t *testing.T) {
 	}
 	for scope, want := range cases {
 		rr := httptest.NewRecorder()
-		handleNext(rr, httptest.NewRequest("GET", "/api/next?scope="+scope, nil))
+		handleNext(rr, httptest.NewRequestWithContext(t.Context(), "GET", "/api/next?scope="+scope, nil))
 		var out []map[string]any
 		decode(t, rr, &out)
 		if len(out) != want {
@@ -307,7 +310,7 @@ func TestNextDeepLinkPinsFirst(t *testing.T) {
 	target := addItem("A", "2", "new", false)
 	addItem("A", "3", "new", false)
 	rr := httptest.NewRecorder()
-	handleNext(rr, httptest.NewRequest("GET", "/api/next?scope=all&first="+target.ID, nil))
+	handleNext(rr, httptest.NewRequestWithContext(t.Context(), "GET", "/api/next?scope=all&first="+target.ID, nil))
 	var out []map[string]any
 	decode(t, rr, &out)
 	if len(out) == 0 || out[0]["id"] != target.ID {
@@ -330,7 +333,7 @@ func TestNextDeepLinkIgnoresUnreviewable(t *testing.T) {
 	addItem("A", "1", "new", false)
 	decided := addItem("A", "2", "good", false) // already decided → not reviewable
 	rr := httptest.NewRecorder()
-	handleNext(rr, httptest.NewRequest("GET", "/api/next?scope=all&first="+decided.ID, nil))
+	handleNext(rr, httptest.NewRequestWithContext(t.Context(), "GET", "/api/next?scope=all&first="+decided.ID, nil))
 	var out []map[string]any
 	decode(t, rr, &out)
 	for _, x := range out {
@@ -345,10 +348,8 @@ func TestVoteUnvoteSelectsFlow(t *testing.T) {
 	addSource("A", "Alpha", "http://a")
 	it := addItem("A", "1", "new", false)
 
-	post := func(h http.HandlerFunc, body string) *httptest.ResponseRecorder {
-		rr := httptest.NewRecorder()
-		h(rr, httptest.NewRequest("POST", "/", stringReader(body)))
-		return rr
+	post := func(h http.HandlerFunc, body string) {
+		h(httptest.NewRecorder(), httptest.NewRequestWithContext(t.Context(), "POST", "/", stringReader(body)))
 	}
 
 	// vote good
@@ -358,7 +359,7 @@ func TestVoteUnvoteSelectsFlow(t *testing.T) {
 	}
 	// it now shows up in selects
 	rr := httptest.NewRecorder()
-	handleSelects(rr, httptest.NewRequest("GET", "/api/selects", nil))
+	handleSelects(rr, httptest.NewRequestWithContext(t.Context(), "GET", "/api/selects", nil))
 	var sel []map[string]any
 	decode(t, rr, &sel)
 	if len(sel) != 1 {
@@ -379,7 +380,7 @@ func TestVoteUnvoteSelectsFlow(t *testing.T) {
 func TestVoteRejectsBadDecision(t *testing.T) {
 	newStore()
 	rr := httptest.NewRecorder()
-	handleVote(rr, httptest.NewRequest("POST", "/", stringReader(`{"id":"x","decision":"maybe"}`)))
+	handleVote(rr, httptest.NewRequestWithContext(t.Context(), "POST", "/", stringReader(`{"id":"x","decision":"maybe"}`)))
 	if rr.Code != 400 {
 		t.Errorf("bad decision should be 400, got %d", rr.Code)
 	}
@@ -388,7 +389,7 @@ func TestVoteRejectsBadDecision(t *testing.T) {
 func TestVoteUnknownIsNotFound(t *testing.T) {
 	newStore()
 	rr := httptest.NewRecorder()
-	handleVote(rr, httptest.NewRequest("POST", "/", stringReader(`{"id":"nope","decision":"good"}`)))
+	handleVote(rr, httptest.NewRequestWithContext(t.Context(), "POST", "/", stringReader(`{"id":"nope","decision":"good"}`)))
 	if rr.Code != 404 {
 		t.Errorf("vote on unknown id should be 404, got %d", rr.Code)
 	}
@@ -397,7 +398,7 @@ func TestVoteUnknownIsNotFound(t *testing.T) {
 func TestAddSourceValidation(t *testing.T) {
 	newStore()
 	rr := httptest.NewRecorder()
-	handleSources(rr, httptest.NewRequest("POST", "/api/sources", stringReader(`{"url":"notaurl"}`)))
+	handleSources(rr, httptest.NewRequestWithContext(t.Context(), "POST", "/api/sources", stringReader(`{"url":"notaurl"}`)))
 	if rr.Code != 400 {
 		t.Errorf("non-http url should be 400, got %d", rr.Code)
 	}
@@ -422,7 +423,7 @@ func TestExpandPath(t *testing.T) {
 func TestAddSourceStoresConfigFile(t *testing.T) {
 	newStore()
 	rr := httptest.NewRecorder()
-	handleSources(rr, httptest.NewRequest("POST", "/api/sources",
+	handleSources(rr, httptest.NewRequestWithContext(t.Context(), "POST", "/api/sources",
 		stringReader(`{"url":"http://x/gallery","configFile":"~/.config/gallery-dl/booru.conf"}`)))
 	if rr.Code != 200 {
 		t.Fatalf("expected 200, got %d", rr.Code)
@@ -570,7 +571,7 @@ func TestValidateConfigJSON(t *testing.T) {
 func TestAddSourceRejectsBadConfigJSON(t *testing.T) {
 	newStore()
 	rr := httptest.NewRecorder()
-	handleSources(rr, httptest.NewRequest("POST", "/api/sources",
+	handleSources(rr, httptest.NewRequestWithContext(t.Context(), "POST", "/api/sources",
 		stringReader(`{"url":"http://x/g","configJson":"{ broken"}`)))
 	if rr.Code != 400 {
 		t.Errorf("bad config JSON should be 400, got %d", rr.Code)
@@ -583,7 +584,7 @@ func TestAddSourceRejectsBadConfigJSON(t *testing.T) {
 func TestAddSourceStoresConfigJSON(t *testing.T) {
 	newStore()
 	rr := httptest.NewRecorder()
-	handleSources(rr, httptest.NewRequest("POST", "/api/sources",
+	handleSources(rr, httptest.NewRequestWithContext(t.Context(), "POST", "/api/sources",
 		stringReader(`{"url":"http://x/g","configJson":"{\"extractor\":{\"rule34\":{\"user-id\":\"42\"}}}"}`)))
 	if rr.Code != 200 {
 		t.Fatalf("expected 200, got %d — %s", rr.Code, rr.Body.String())
@@ -596,7 +597,7 @@ func TestAddSourceStoresConfigJSON(t *testing.T) {
 func TestRescanUnknownSource(t *testing.T) {
 	newStore()
 	rr := httptest.NewRecorder()
-	handleSourceRescan(rr, httptest.NewRequest("POST", "/api/sources/rescan", stringReader(`{"id":"nope"}`)))
+	handleSourceRescan(rr, httptest.NewRequestWithContext(t.Context(), "POST", "/api/sources/rescan", stringReader(`{"id":"nope"}`)))
 	if rr.Code != 404 {
 		t.Errorf("rescan of unknown source should be 404, got %d", rr.Code)
 	}
@@ -608,7 +609,7 @@ func TestStats(t *testing.T) {
 	addItem("A", "1", "new", false)
 	addItem("A", "2", "good", false)
 	rr := httptest.NewRecorder()
-	handleStats(rr, httptest.NewRequest("GET", "/api/stats", nil))
+	handleStats(rr, httptest.NewRequestWithContext(t.Context(), "GET", "/api/stats", nil))
 	var s struct {
 		Total   int            `json:"total"`
 		Counts  map[string]int `json:"counts"`
@@ -643,9 +644,9 @@ func TestRunGdlTimeoutSurfaces(t *testing.T) {
 
 func TestGuardHostAndOrigin(t *testing.T) {
 	ok := 0
-	h := guard(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { ok++; w.WriteHeader(200) }))
+	h := guard(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) { ok++; w.WriteHeader(200) }))
 	do := func(method, host, origin, ct string) int {
-		r := httptest.NewRequest(method, "http://placeholder/api/vote", stringReader(`{}`))
+		r := httptest.NewRequestWithContext(t.Context(), method, "http://placeholder/api/vote", stringReader(`{}`))
 		r.Host = host
 		if origin != "" {
 			r.Header.Set("Origin", origin)
@@ -693,9 +694,9 @@ func TestGuardHostAndOrigin(t *testing.T) {
 
 func TestGuardAllowedHostsEnv(t *testing.T) {
 	t.Setenv("LOUPE_ALLOWED_HOSTS", "loupe.example.com, media.lan")
-	h := guard(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { w.WriteHeader(200) }))
+	h := guard(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) { w.WriteHeader(200) }))
 	do := func(host string) int {
-		r := httptest.NewRequest("GET", "http://placeholder/api/stats", nil)
+		r := httptest.NewRequestWithContext(t.Context(), "GET", "http://placeholder/api/stats", nil)
 		r.Host = host
 		rr := httptest.NewRecorder()
 		h.ServeHTTP(rr, r)
@@ -713,14 +714,14 @@ func TestGuardAllowedHostsEnv(t *testing.T) {
 }
 
 func TestPostOnly(t *testing.T) {
-	h := postOnly(func(w http.ResponseWriter, r *http.Request) { w.WriteHeader(200) })
+	h := postOnly(func(w http.ResponseWriter, _ *http.Request) { w.WriteHeader(200) })
 	rr := httptest.NewRecorder()
-	h(rr, httptest.NewRequest("GET", "/api/vote", nil))
+	h(rr, httptest.NewRequestWithContext(t.Context(), "GET", "/api/vote", nil))
 	if rr.Code != 405 {
 		t.Errorf("GET on a mutating endpoint should be 405, got %d", rr.Code)
 	}
 	rr = httptest.NewRecorder()
-	h(rr, httptest.NewRequest("POST", "/api/vote", stringReader(`{}`)))
+	h(rr, httptest.NewRequestWithContext(t.Context(), "POST", "/api/vote", stringReader(`{}`)))
 	if rr.Code != 200 {
 		t.Errorf("POST should pass, got %d", rr.Code)
 	}
@@ -748,7 +749,7 @@ func TestZipEntryName(t *testing.T) {
 func findEmbeddedAsset(t *testing.T) string {
 	t.Helper()
 	var found string
-	fs.WalkDir(buildFS, "frontend/build/_app", func(p string, d fs.DirEntry, err error) error {
+	_ = fs.WalkDir(buildFS, "frontend/build/_app", func(p string, d fs.DirEntry, err error) error {
 		if err == nil && !d.IsDir() && strings.HasSuffix(p, ".js") {
 			found = strings.TrimPrefix(p, "frontend/build/")
 			return fs.SkipAll
@@ -771,7 +772,7 @@ func TestStaticHandlerAssetVsNavigation(t *testing.T) {
 	h := staticHandler()
 	do := func(p string) *httptest.ResponseRecorder {
 		rr := httptest.NewRecorder()
-		h.ServeHTTP(rr, httptest.NewRequest("GET", p, nil))
+		h.ServeHTTP(rr, httptest.NewRequestWithContext(t.Context(), "GET", p, nil))
 		return rr
 	}
 

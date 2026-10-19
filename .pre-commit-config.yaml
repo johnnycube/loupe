@@ -1,0 +1,107 @@
+# .pre-commit-config.yaml — run with prek (`prek install`) or pre-commit.
+default_install_hook_types: [pre-commit, commit-msg, pre-push]
+default_stages: [pre-commit]
+fail_fast: false
+
+repos:
+  # Hygiene (prek built-ins, offline)
+  - repo: builtin
+    hooks:
+      - id: trailing-whitespace
+        args: [--markdown-linebreak-ext=md]
+      - id: end-of-file-fixer
+      - id: mixed-line-ending
+        args: [--fix=lf]
+      - id: fix-byte-order-marker
+      - id: check-merge-conflict
+      - id: check-case-conflict
+      - id: check-illegal-windows-names
+      - id: check-added-large-files
+        args: [--maxkb=500]
+      - id: check-yaml
+      - id: check-toml
+      - id: check-json
+      - id: check-symlinks
+      - id: check-executables-have-shebangs
+      - id: check-shebang-scripts-are-executable
+      - id: detect-private-key
+
+  # Secrets
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.30.1              # `prek update` / Renovate bumps this
+    hooks:
+      - id: gitleaks
+
+  # Conventional commit messages (types mirror cliff.toml's commit_parsers)
+  - repo: https://github.com/compilerla/conventional-pre-commit
+    rev: v4.4.0
+    hooks:
+      - id: conventional-pre-commit
+        stages: [commit-msg]
+        args: [--strict, feat, fix, refactor, perf, test, docs, build, ci, style, chore, revert]
+
+  # GitHub Actions workflow audit (template injection, unpinned actions, ...)
+  - repo: https://github.com/zizmorcore/zizmor-pre-commit
+    rev: v1.31.1
+    hooks:
+      - id: zizmor
+
+  # Repository setup policy
+  - repo: https://github.com/fleetlint/fleetlint
+    rev: v0.5.1
+    hooks:
+      - id: fleetlint
+
+  # Full gate before push (the task runner's `check` target)
+  - repo: local
+    hooks:
+      - id: check
+        name: full check (lint, tests, coverage, audit, build)
+        entry: make check
+        language: system
+        pass_filenames: false
+        always_run: true
+        stages: [pre-push]
+
+  # Go
+  - repo: local
+    hooks:
+      - id: golangci-fmt
+        name: golangci-lint fmt
+        entry: golangci-lint fmt
+        language: system
+        types: [go]
+        pass_filenames: false
+      - id: golangci-lint
+        name: golangci-lint (new issues only)
+        entry: golangci-lint run --new-from-rev=HEAD --fix
+        language: system
+        types: [go]
+        pass_filenames: false
+      - id: go-mod-tidy
+        name: go mod tidy is clean
+        entry: go mod tidy -diff
+        language: system
+        files: ^go\.(mod|sum)$
+        pass_filenames: false
+
+  # Node hooks for frontend/: run inside that directory, on its files only.
+  # (`identify` has no svelte type, so the hooks match on path instead.)
+  - repo: local
+    hooks:
+      - id: prettier-frontend
+        name: prettier (frontend)
+        entry: bash -c 'cd frontend && npx --no -- prettier --write --ignore-unknown "${@#frontend/}"' --
+        language: system
+        files: ^frontend/.*\.(js|svelte|css|json|md|html)$
+      - id: eslint-frontend
+        name: eslint (frontend)
+        entry: bash -c 'cd frontend && npx --no -- eslint --fix --max-warnings=0 "${@#frontend/}"' --
+        language: system
+        files: ^frontend/.*\.(js|svelte)$
+      - id: svelte-check-frontend
+        name: svelte-check (frontend)
+        entry: bash -c 'cd frontend && npm run -s check'
+        language: system
+        pass_filenames: false
+        files: ^frontend/.*\.(js|svelte)$

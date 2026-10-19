@@ -1,8 +1,24 @@
 {
   $schema: 'https://docs.renovatebot.com/renovate-schema.json',
 
-  // Sensible Renovate defaults (dependency dashboard, grouping, etc.).
-  extends: ['config:recommended'],
+  // Sensible Renovate defaults (dependency dashboard, grouping, etc.), plus:
+  //  - pin GitHub Actions to commit SHAs and keep the pins current,
+  //  - conventional commit messages (chore(deps): ...), which cliff.toml skips,
+  //  - bump the `# renovate:` annotated *_VERSION pins in the Makefile.
+  extends: [
+    'config:recommended',
+    'helpers:pinGitHubActionDigests',
+    ':semanticCommits',
+    'customManagers:makefileVersions',
+  ],
+
+  // Wait a few days after a release before proposing it: lets yanked versions
+  // and day-one regressions (or compromised packages) get caught upstream first.
+  minimumReleaseAge: '3 days',
+
+  // Keep go.sum tidy after Go updates; bump pre-commit hook revisions too.
+  postUpdateOptions: ['gomodTidy'],
+  'pre-commit': { enabled: true },
 
   // Automerge every update type — patch / minor / major / digest / pin ...
   automerge: true,

@@ -1,0 +1,15 @@
+# .fleetlint.yaml: https://github.com/fleetlint/fleetlint
+version: 1
+extends:
+  - fleetlint:recommended
+facts:
+  visibility: public   # as the forge reported it at init; update it if the repository changes hands
+# discovered: stacks=[go] forge=github visibility=public tier=1 (default) layout=nested release=yes
+# Facts are re-detected on every run; pin one under `facts:` only when detection is wrong.
+scopes:
+  - path: frontend
+    stacks: [node]
+    exceptions:
+      - rule: quality/coverage-threshold/node
+        reason: "The SvelteKit UI has no unit tests yet; it is exercised through the Go handler tests and manual QA. Add vitest with a coverage threshold together with the first component test."
+        until: 2027-04-30

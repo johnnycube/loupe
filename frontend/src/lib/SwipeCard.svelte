@@ -5,7 +5,9 @@
   // Pick the right element: <video> for video, the full url for gifs (so they
   // animate), otherwise the lighter sample image.
   const VIDEO_EXT = ['mp4', 'webm', 'm4v', 'mov', 'ogv', 'ogg'];
-  function extOf(u) { return (u || '').split(/[?#]/)[0].split('.').pop().toLowerCase(); }
+  function extOf(u) {
+    return (u || '').split(/[?#]/)[0].split('.').pop().toLowerCase();
+  }
   let kind = $derived(extOf(item.url));
   let isVideo = $derived(VIDEO_EXT.includes(kind));
   let mediaSrc = $derived(kind === 'gif' ? item.url : item.sample);
@@ -29,7 +31,10 @@
     if (!dragging) return;
     dragging = false;
     const moved = Math.abs(dx);
-    if (moved > 100) { fly(dx > 0 ? 'good' : 'bad'); return; }
+    if (moved > 100) {
+      fly(dx > 0 ? 'good' : 'bad');
+      return;
+    }
     if (moved < 6) onzoom?.(); // a tap (not a drag) → open the full-screen view
     dx = 0;
   }
@@ -52,10 +57,13 @@
   let passOp = $derived(Math.max(0, Math.min(-dx / 100, 1)));
 </script>
 
+<!-- The swipe surface is a pointer-only shortcut; keep/pass are also plain buttons,
+     so keyboard and assistive-technology users lose nothing. -->
+<!-- svelte-ignore a11y_no_static_element_interactions -->
 <div
   class="card"
   bind:this={el}
-  style={style}
+  {style}
   onpointerdown={down}
   onpointermove={move}
   onpointerup={up}
@@ -63,21 +71,17 @@
 >
   <div class="mat">
     {#if isVideo}
-      <video
-        src={item.url}
-        poster={item.sample}
-        autoplay
-        loop
-        muted
-        playsinline
-        draggable="false"
+      <video src={item.url} poster={item.sample} autoplay loop muted playsinline draggable="false"
       ></video>
     {:else}
       <img
         src={mediaSrc}
         alt=""
         draggable="false"
-        onerror={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = item.url; }}
+        onerror={(e) => {
+          e.currentTarget.onerror = null;
+          e.currentTarget.src = item.url;
+        }}
       />
     {/if}
   </div>
@@ -89,8 +93,8 @@
     rel="noopener"
     title="Open original image"
     onpointerdown={(e) => e.stopPropagation()}
-    onclick={(e) => e.stopPropagation()}
-  >↗ original</a>
+    onclick={(e) => e.stopPropagation()}>↗ original</a
+  >
   {#if item.gone}<div class="cardtag">stale source</div>{/if}
   <div class="stamp keep" style="opacity:{keepOp}">KEEP</div>
   <div class="stamp pass" style="opacity:{passOp}">PASS</div>

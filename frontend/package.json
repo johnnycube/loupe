@@ -2,18 +2,33 @@
   "name": "loupe-frontend",
   "private": true,
   "version": "1.0.0",
+  "license": "AGPL-3.0-only",
   "type": "module",
   "scripts": {
     "dev": "vite dev",
     "build": "vite build",
     "postbuild": "node -e \"require('fs').writeFileSync('build/.gitkeep','')\"",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "lint": "prettier --check . && eslint --max-warnings=0 .",
+    "format": "prettier --write .",
+    "check": "svelte-kit sync && svelte-check --fail-on-warnings"
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
     "@sveltejs/adapter-static": "^3.0.10",
     "@sveltejs/kit": "^2.66.0",
     "@sveltejs/vite-plugin-svelte": "^7.1.2",
+    "eslint": "^10.13.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-svelte": "^3.23.1",
+    "globals": "^17.13.0",
+    "prettier": "^3.9.10",
+    "prettier-plugin-svelte": "^4.1.1",
     "svelte": "^5.56.3",
+    "svelte-check": "^4.7.7",
     "vite": "^8.0.16"
+  },
+  "engines": {
+    "node": ">=24"
   }
 }

@@ -16,16 +16,34 @@
 </script>
 
 <div class="scopebar">
-  <button class="scopechip" class:active={scope === 'all'} onclick={() => onpick('all')}>All</button>
+  <button class="scopechip" class:active={scope === 'all'} onclick={() => onpick('all')}>All</button
+  >
   {#if showStale && staleN}
-    <button class="scopechip" class:active={scope === 'stale'} onclick={() => onpick('stale')}>⚑ Stale <span class="n">{staleN}</span></button>
+    <button class="scopechip" class:active={scope === 'stale'} onclick={() => onpick('stale')}
+      >⚑ Stale <span class="n">{staleN}</span></button
+    >
   {/if}
-  <input class="scopefilter" placeholder="filter…" bind:value={q} aria-label="Filter sources and collections" />
+  <input
+    class="scopefilter"
+    placeholder="filter…"
+    bind:value={q}
+    aria-label="Filter sources and collections"
+  />
   {#each cols as c (c.id)}
-    <button class="scopechip" class:active={scope === 'collection:' + c.id} onclick={() => onpick('collection:' + c.id)}>▤ {c.name} <span class="n">{c.counts[countKey]}</span></button>
+    <button
+      class="scopechip"
+      class:active={scope === 'collection:' + c.id}
+      onclick={() => onpick('collection:' + c.id)}
+      >▤ {c.name} <span class="n">{c.counts[countKey]}</span></button
+    >
   {/each}
   {#each srcs as s (s.id)}
-    <button class="scopechip" class:active={scope === 'source:' + s.id} onclick={() => onpick('source:' + s.id)}>{s.name} <span class="n">{s.counts[countKey]}</span></button>
+    <button
+      class="scopechip"
+      class:active={scope === 'source:' + s.id}
+      onclick={() => onpick('source:' + s.id)}
+      >{s.name} <span class="n">{s.counts[countKey]}</span></button
+    >
   {/each}
   {#if needle && !cols.length && !srcs.length}<span class="scopenone">no matches</span>{/if}
 </div>

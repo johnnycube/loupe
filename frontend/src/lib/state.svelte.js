@@ -2,19 +2,19 @@ import { api } from './api.js';
 
 // Universal reactive state (Svelte 5 runes in a .svelte.js module).
 export const S = $state({
-  view: 'review',          // review | selects | collections | sources
-  scope: 'all',            // all | stale | source:<id> | collection:<id> (review)
-  selectScope: 'all',      // all | source:<id> | collection:<id> (selects filter)
+  view: 'review', // review | selects | collections | sources
+  scope: 'all', // all | stale | source:<id> | collection:<id> (review)
+  selectScope: 'all', // all | source:<id> | collection:<id> (selects filter)
   queue: [],
-  history: [],             // recently-voted items, for undo (this session)
+  history: [], // recently-voted items, for undo (this session)
   selects: [],
   sources: [],
   collections: [],
-  configs: [],             // named, reusable gallery-dl configs sources can share
+  configs: [], // named, reusable gallery-dl configs sources can share
   stats: null,
-  version: null,           // build metadata for the About page
-  editing: null,           // source id being edited
-  editingConfig: null,     // config id being edited
+  version: null, // build metadata for the About page
+  editing: null, // source id being edited
+  editingConfig: null, // config id being edited
   toast: ''
 });
 
@@ -26,22 +26,36 @@ export function toast(msg) {
 }
 
 export async function refreshStats() {
-  try { S.stats = await api.get('/api/stats'); } catch { S.stats = null; }
+  try {
+    S.stats = await api.get('/api/stats');
+  } catch {
+    S.stats = null;
+  }
 }
 // Build metadata is immutable per run, so fetch it once and cache it.
 export async function loadVersion() {
   if (S.version) return;
-  try { S.version = await api.get('/api/version'); } catch { S.version = null; }
+  try {
+    S.version = await api.get('/api/version');
+  } catch {
+    S.version = null;
+  }
 }
 export async function loadLibrary() {
-  const [s, c, cf] = await Promise.all([api.get('/api/sources'), api.get('/api/collections'), api.get('/api/configs')]);
+  const [s, c, cf] = await Promise.all([
+    api.get('/api/sources'),
+    api.get('/api/collections'),
+    api.get('/api/configs')
+  ]);
   S.sources = s || [];
   S.collections = c || [];
   S.configs = cf || [];
 }
 // Deep link (/review/{id}): the item to pin to the front of the first fetch.
 let pendingFirst = null;
-export function setPendingFirst(id) { pendingFirst = id; }
+export function setPendingFirst(id) {
+  pendingFirst = id;
+}
 
 export async function fill() {
   try {
@@ -51,10 +65,13 @@ export async function fill() {
       pendingFirst = null; // only the first fetch jumps to the deep-linked item
     }
     const more = await api.get(url);
+    // eslint-disable-next-line svelte/prefer-svelte-reactivity -- transient dedupe set, not state
     const have = new Set(S.queue.map((q) => q.id));
     S.queue = [...S.queue, ...more.filter((m) => !have.has(m.id))];
     preloadAhead();
-  } catch { /* ignore */ }
+  } catch {
+    /* ignore */
+  }
 }
 
 // ---- sequential image preloading -------------------------------------------
@@ -64,15 +81,16 @@ export async function fill() {
 // N+2's image only starts once N+1's has finished, and so on. A single-flight
 // guard means a vote/undo mid-load doesn't spawn a parallel chain — the running
 // walk re-reads the (now shifted) queue by position and keeps moving forward.
+// eslint-disable-next-line svelte/prefer-svelte-reactivity -- a cache nothing renders from
 const preloaded = new Set(); // media URLs already fetched this review session
 let preloading = false;
-let preloadAgain = false;    // a queue change arrived mid-walk → walk once more after
+let preloadAgain = false; // a queue change arrived mid-walk → walk once more after
 
 // The image the rating card actually shows: the full url for gifs (so they
 // animate) or a video's poster, otherwise the lighter sample. Mirrors SwipeCard.
 function previewSrc(item) {
   const ext = (item.url || '').split(/[?#]/)[0].split('.').pop().toLowerCase();
-  return ext === 'gif' ? item.url : (item.sample || item.url);
+  return ext === 'gif' ? item.url : item.sample || item.url;
 }
 function loadImage(src) {
   return new Promise((resolve) => {
@@ -82,7 +100,10 @@ function loadImage(src) {
   });
 }
 export async function preloadAhead() {
-  if (preloading) { preloadAgain = true; return; } // coalesce; re-walk once we're idle
+  if (preloading) {
+    preloadAgain = true;
+    return;
+  } // coalesce; re-walk once we're idle
   preloading = true;
   try {
     do {
@@ -90,10 +111,10 @@ export async function preloadAhead() {
       const depth = S.stats?.preloadDepth ?? 3;
       for (let i = 1; i <= depth; i++) {
         const it = S.queue[i]; // index, not identity: a vote shifts the window forward
-        if (!it) break;        // queue shorter than depth — nothing more to warm yet
+        if (!it) break; // queue shorter than depth — nothing more to warm yet
         const src = previewSrc(it);
         if (!src || preloaded.has(src)) continue;
-        await loadImage(src);  // wait for this one before starting the next
+        await loadImage(src); // wait for this one before starting the next
         preloaded.add(src);
       }
     } while (preloadAgain); // a vote/undo landed mid-walk → cover the shifted window
@@ -175,15 +196,39 @@ export async function unselect(id) {
 
 // sources
 export async function addSource(name, url, description, configFile, configJson, configId) {
-  const r = await api.post('/api/sources', { name, url, description, configFile, configJson, configId });
-  if (r.error) { toast(r.error); return false; }
+  const r = await api.post('/api/sources', {
+    name,
+    url,
+    description,
+    configFile,
+    configJson,
+    configId
+  });
+  if (r.error) {
+    toast(r.error);
+    return false;
+  }
   toast('Watching — scanning the full gallery…');
-  setTimeout(() => { loadLibrary(); refreshStats(); }, 1500);
+  setTimeout(() => {
+    loadLibrary();
+    refreshStats();
+  }, 1500);
   return true;
 }
 export async function saveSource(id, name, url, description, configFile, configJson, configId) {
-  const r = await api.post('/api/sources/update', { id, name, url, description, configFile, configJson, configId });
-  if (r.error) { toast(r.error); return false; }
+  const r = await api.post('/api/sources/update', {
+    id,
+    name,
+    url,
+    description,
+    configFile,
+    configJson,
+    configId
+  });
+  if (r.error) {
+    toast(r.error);
+    return false;
+  }
   toast(r.urlChanged ? 'URL changed — old items marked stale (kept, not deleted).' : 'Saved');
   S.editing = null;
   await loadLibrary();
@@ -192,7 +237,10 @@ export async function saveSource(id, name, url, description, configFile, configJ
 }
 export async function rescanSource(id) {
   const r = await api.post('/api/sources/rescan', { id });
-  if (r.error) { toast(r.error); return; }
+  if (r.error) {
+    toast(r.error);
+    return;
+  }
   if (r.lastError) toast(r.lastError);
   else toast(r.added ? `+${r.added} new` : 'No new items');
   await loadLibrary();
@@ -214,7 +262,10 @@ export async function purgeStale(id) {
 // collections
 export async function createCollection(name, description) {
   const r = await api.post('/api/collections', { name, description });
-  if (r.error) { toast(r.error); return false; }
+  if (r.error) {
+    toast(r.error);
+    return false;
+  }
   loadLibrary();
   refreshStats();
   return true;
@@ -232,13 +283,19 @@ export async function member(collectionId, sourceId, action) {
 // configs (named, reusable gallery-dl configs shared across sources)
 export async function createConfig(name, configJson) {
   const r = await api.post('/api/configs', { name, configJson });
-  if (r.error) { toast(r.error); return false; }
+  if (r.error) {
+    toast(r.error);
+    return false;
+  }
   loadLibrary();
   return true;
 }
 export async function saveConfig(id, name, configJson) {
   const r = await api.post('/api/configs/update', { id, name, configJson });
-  if (r.error) { toast(r.error); return false; }
+  if (r.error) {
+    toast(r.error);
+    return false;
+  }
   toast('Saved — applies on the next poll');
   S.editingConfig = null;
   loadLibrary();

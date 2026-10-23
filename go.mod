@@ -2,7 +2,7 @@ module github.com/johnnycube/loupe
 
 go 1.26.0
 
-toolchain go1.27.2
+toolchain go1.27.3
 
 // eslint's dependency tree ships a Go package under node_modules; keep it out of ./...
 ignore ./frontend/node_modules

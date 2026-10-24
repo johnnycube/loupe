@@ -48,7 +48,7 @@ repos:
 
   # Repository setup policy
   - repo: https://github.com/fleetlint/fleetlint
-    rev: v0.5.1
+    rev: v0.8.1
     hooks:
       - id: fleetlint
 

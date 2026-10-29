@@ -1,5 +1,5 @@
 <script>
-  import { S } from '$lib/state.svelte.js';
+  import { S } from '#lib/state.svelte.js';
 
   // Reusable scope filter bar, shared by Review and Selects. Renders All /
   // (optional) Stale / collection / source chips, plus a quick-filter input that

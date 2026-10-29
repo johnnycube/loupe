@@ -1,9 +1,9 @@
 <script>
   import { onMount } from 'svelte';
   import { SvelteSet } from 'svelte/reactivity';
-  import { replaceState } from '$app/navigation';
-  import SwipeCard from '$lib/SwipeCard.svelte';
-  import ScopeBar from '$lib/ScopeBar.svelte';
+  import { goto } from '$app/navigation';
+  import SwipeCard from '#lib/SwipeCard.svelte';
+  import ScopeBar from '#lib/ScopeBar.svelte';
   import {
     S,
     init,
@@ -27,7 +27,7 @@
     createConfig,
     saveConfig,
     removeConfig
-  } from '$lib/state.svelte.js';
+  } from '#lib/state.svelte.js';
 
   let card = $state(null);
   let checking = $state(false);
@@ -239,7 +239,7 @@
     const path = pathFor(S.view, item);
     if (window.location.pathname !== path) {
       try {
-        replaceState(path, {});
+        goto(path, { shallow: true, replace: true });
       } catch {
         /* router not ready yet; next run will sync */
       }

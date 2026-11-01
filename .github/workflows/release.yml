@@ -1,0 +1,232 @@
+# Automatic patch releases for the image's runtime dependencies.
+#
+# The image ships gallery-dl and ffmpeg, pinned in the Dockerfile and bumped by
+# Renovate (renovate.json5). When a push to main leaves either pin different
+# from the latest release tag, this workflow cuts the next patch release the
+# way a manual one is made:
+#   1. regenerate CHANGELOG.md with git-cliff, commit `chore(release): vX.Y.Z`,
+#   2. tag that commit (annotated, signed) and push both atomically,
+#   3. dispatch docker.yaml on the tag (build, push and sign the image),
+#   4. publish the GitHub release with the git-cliff notes.
+#
+# Only ever a patch: if main has unreleased feat or breaking commits since the
+# latest tag, the run skips with a notice and the next release is a manual one
+# (which then carries the bump).
+#
+# Manual releases work as before: commit `chore(release): vX.Y.Z`, sign the tag
+# locally and push both (`git push --atomic origin main vX.Y.Z`); docker.yaml
+# builds the tag. Because the comparison is against the latest tag, a manual
+# release that already contains a bump turns this workflow into a no-op.
+#
+# Signing: CI holds no maintainer key, so the commit and tag are signed
+# keylessly with gitsign (Sigstore), bound to this workflow's OIDC identity —
+# the trust model the cosign image signature already uses. GitHub shows
+# gitsign signatures as "Unverified" (the Sigstore CA is not in its trust
+# root); verify a tag with
+#   gitsign verify-tag vX.Y.Z \
+#     --certificate-identity=https://github.com/<owner>/loupe/.github/workflows/release.yml@refs/heads/main \
+#     --certificate-oidc-issuer=https://token.actions.githubusercontent.com
+#
+# Pushes made with GITHUB_TOKEN start no workflows. That keeps the release
+# commit from re-triggering anything, and is why the image build is dispatched
+# explicitly (workflow_dispatch is the documented exception). It also means
+# main must stay pushable by GITHUB_TOKEN: a branch protection rule or ruleset
+# on main needs a bypass for GitHub Actions.
+#
+# If a run fails after the push, re-running it is a no-op (the tag now exists);
+# finish by hand with `gh workflow run docker.yaml --ref vX.Y.Z` and
+# `gh release create vX.Y.Z --verify-tag`.
+name: release
+
+on:
+  push:
+    branches: [main]
+    paths: [Dockerfile]
+
+permissions:
+  contents: read
+
+concurrency:
+  # One release at a time, and never cancel one halfway: a pushed tag without
+  # its image or GitHub release has to be finished by hand.
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  patch-release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: write  # push the release commit and tag, create the GitHub release
+      actions: write   # dispatch docker.yaml on the new tag
+      id-token: write  # gitsign: keyless signature of the commit and tag
+    env:
+      # renovate: datasource=go depName=github.com/sigstore/gitsign
+      GITSIGN_VERSION: v0.18.0
+      # renovate: datasource=pypi depName=git-cliff
+      GIT_CLIFF_VERSION: 2.14.2
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # Release main as it is now rather than the triggering commit, so a
+          # queued or re-run job never pushes behind a newer main.
+          ref: main
+          fetch-depth: 0  # tags and history for git describe and git-cliff
+          persist-credentials: false
+
+      - name: Compare the pins with the latest release
+        id: decide
+        run: |
+          # "name version" per pin, sorted. Reads the inline `gallery-dl==X`
+          # form too, which tags from before the ARG form still carry.
+          pins() {
+            git show "$1:Dockerfile" | sed -nE \
+              -e 's/^ARG GALLERY_DL_VERSION=([^[:space:]]+).*/gallery-dl \1/p' \
+              -e 's/.*gallery-dl==([0-9][^[:space:]"\\]*).*/gallery-dl \1/p' \
+              -e 's/.*[[:space:]]ffmpeg=([^[:space:]\\]+).*/ffmpeg \1/p' | sort
+          }
+          oneline() { paste -sd, - | sed 's/,/, /g'; }
+
+          latest=$(git describe --tags --abbrev=0 --match 'v[0-9]*' --exclude '*-*' HEAD)
+          if [[ ! $latest =~ ^v([0-9]+)\.([0-9]+)\.([0-9]+)$ ]]; then
+            echo "::error::latest tag ${latest} is not vMAJOR.MINOR.PATCH"
+            exit 1
+          fi
+          next="v${BASH_REMATCH[1]}.${BASH_REMATCH[2]}.$((BASH_REMATCH[3] + 1))"
+
+          current=$(pins HEAD)
+          released=$(pins "$latest")
+          if [ "$(wc -l <<<"$current")" -ne 2 ]; then
+            echo "::error file=Dockerfile::cannot read the gallery-dl and ffmpeg pins"
+            exit 1
+          fi
+
+          # Unreleased commits that make the next version more than a patch:
+          # feat (minor) and breaking changes (`type!:` subject or a
+          # BREAKING CHANGE footer). They wait for a manual release.
+          range="${latest}..HEAD"
+          blocking=$(
+            git log --format='%h %s' "$range" |
+              grep -E '^[0-9a-f]+ (feat(\([^)]*\))?!?|[a-z]+(\([^)]*\))?!):' || true
+            git log --format='%h %s' -E --grep='^BREAKING[ -]CHANGE:' "$range"
+          )
+          blocking=$(sed '/^$/d' <<<"$blocking" | sort -u)
+
+          if [[ $(git log -1 --format=%s HEAD) == 'chore(release):'* ]]; then
+            echo "HEAD is already a release commit: nothing to do."
+            echo "release=false" >> "$GITHUB_OUTPUT"
+          elif [ "$current" = "$released" ]; then
+            echo "gallery-dl and ffmpeg are unchanged since ${latest}: nothing to release."
+            echo "release=false" >> "$GITHUB_OUTPUT"
+          elif [ -n "$blocking" ]; then
+            echo "::notice title=No automatic release::gallery-dl/ffmpeg changed since ${latest}, but main has unreleased feat or breaking commits; release manually."
+            {
+              echo "No automatic patch release: these unreleased commits need more than a patch."
+              echo "A manual release will include the gallery-dl/ffmpeg bump."
+              echo
+              echo '```'
+              echo "$blocking"
+              echo '```'
+            } | tee -a "$GITHUB_STEP_SUMMARY"
+            echo "release=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "Pins changed since ${latest}; releasing ${next}."
+            diff <(echo "$released") <(echo "$current") || true
+            {
+              echo "release=true"
+              echo "version=${next}"
+              echo "runtime=$(oneline <<<"$current") (${latest}: $(oneline <<<"$released"))"
+            } >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Set up Go
+        if: steps.decide.outputs.release == 'true'
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: go.mod
+          cache: false  # a release job restores nothing another run could have written
+
+      # gitsign from `go install` (checked against the Go checksum database),
+      # git-cliff from PyPI; both at the versions pinned above.
+      - name: Install gitsign and git-cliff
+        if: steps.decide.outputs.release == 'true'
+        run: |
+          go install "github.com/sigstore/gitsign@${GITSIGN_VERSION}"
+          echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
+          pipx install "git-cliff==${GIT_CLIFF_VERSION}"
+
+      - name: Commit, tag and push
+        if: steps.decide.outputs.release == 'true'
+        env:
+          VERSION: ${{ steps.decide.outputs.version }}
+          GH_TOKEN: ${{ github.token }}
+          GITSIGN_TOKEN_PROVIDER: github-actions
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git config gpg.format x509
+          git config gpg.x509.program gitsign
+          git config commit.gpgsign true
+          git config tag.gpgsign true
+
+          # Same as a manual release: the whole changelog regenerated, the
+          # unreleased commits filed under the new version.
+          git cliff --tag "$VERSION" -o CHANGELOG.md
+          refs=("refs/tags/${VERSION}")
+          if git diff --quiet -- CHANGELOG.md; then
+            # Only commit types cliff.toml skips since the last tag.
+            echo "No changelog entries since the last tag; tagging HEAD as is."
+          else
+            git commit -m "chore(release): ${VERSION}" -- CHANGELOG.md
+            refs=(HEAD:refs/heads/main "${refs[@]}")
+          fi
+          git tag -s -m "$VERSION" "$VERSION"
+
+          # Credentials for this one push only (checkout persisted none).
+          auth=$(printf 'x-access-token:%s' "$GH_TOKEN" | base64 -w0)
+          echo "::add-mask::${auth}"
+          git -c "http.https://github.com/.extraheader=AUTHORIZATION: basic ${auth}" \
+            push --atomic origin "${refs[@]}"
+
+      - name: Build the image
+        if: steps.decide.outputs.release == 'true'
+        env:
+          VERSION: ${{ steps.decide.outputs.version }}
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run docker.yaml --repo "$GITHUB_REPOSITORY" --ref "$VERSION"
+
+      - name: Publish the GitHub release
+        if: steps.decide.outputs.release == 'true'
+        env:
+          VERSION: ${{ steps.decide.outputs.version }}
+          RUNTIME: ${{ steps.decide.outputs.runtime }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          image="ghcr.io/${GITHUB_REPOSITORY,,}:${VERSION}"
+          notes="${RUNNER_TEMP}/notes.md"
+          # The git-cliff section, then the same image block as a manual release.
+          git cliff --latest --strip header > "$notes"
+          cat >> "$notes" <<EOF
+
+          **Runtime:** ${RUNTIME}
+
+          **Container image:** \`${image}\`, signed with cosign (keyless Sigstore) with an SPDX SBOM and SLSA provenance attached. Verify with:
+
+          \`\`\`sh
+          cosign verify ${image} \\
+            --certificate-identity-regexp="^https://github.com/${GITHUB_REPOSITORY}/" \\
+            --certificate-oidc-issuer=https://token.actions.githubusercontent.com
+          \`\`\`
+
+          Released automatically by the release workflow; the tag is signed with gitsign. Verify with:
+
+          \`\`\`sh
+          gitsign verify-tag ${VERSION} \\
+            --certificate-identity=https://github.com/${GITHUB_REPOSITORY}/.github/workflows/release.yml@refs/heads/main \\
+            --certificate-oidc-issuer=https://token.actions.githubusercontent.com
+          \`\`\`
+          EOF
+          gh release create "$VERSION" --repo "$GITHUB_REPOSITORY" --verify-tag \
+            --title "$VERSION" --notes-file "$notes"
+          echo "Released [${VERSION}](https://github.com/${GITHUB_REPOSITORY}/releases/tag/${VERSION})." >> "$GITHUB_STEP_SUMMARY"

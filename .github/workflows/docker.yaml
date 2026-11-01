@@ -7,6 +7,11 @@
 #              other branches build for validation but never publish. Published
 #              images are signed by digest with cosign (keyless, Sigstore).
 #
+# A release tag arrives either by push (a manual release) or as a
+# workflow_dispatch on the tag ref from release.yml (an automated patch release;
+# its GITHUB_TOKEN push cannot trigger this workflow). Both runs see
+# github.ref = refs/tags/vX.Y.Z, so they build, tag and sign the image the same way.
+#
 # Publishing needs no configured secrets — the workflow authenticates to ghcr.io
 # with the built-in GITHUB_TOKEN via the `packages: write` permission, and the
 # signature uses the job's OIDC identity (`id-token: write`).

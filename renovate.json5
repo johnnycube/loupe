@@ -4,12 +4,15 @@
   // Sensible Renovate defaults (dependency dashboard, grouping, etc.), plus:
   //  - pin GitHub Actions to commit SHAs and keep the pins current,
   //  - conventional commit messages (chore(deps): ...), which cliff.toml skips,
-  //  - bump the `# renovate:` annotated *_VERSION pins in the Makefile.
+  //  - bump the `# renovate:` annotated *_VERSION pins in the Makefile, the
+  //    Dockerfile (gallery-dl) and the workflows (release tooling).
   extends: [
     'config:recommended',
     'helpers:pinGitHubActionDigests',
     ':semanticCommits',
     'customManagers:makefileVersions',
+    'customManagers:dockerfileVersions',
+    'customManagers:githubActionsVersions',
   ],
 
   // Wait a few days after a release before proposing it: lets yanked versions
@@ -40,6 +43,30 @@
       // them so they only ever move together, once kit supports the new set.
       matchPackageNames: ['svelte', 'vite', '@sveltejs/**'],
       groupName: 'SvelteKit toolchain',
+    },
+    {
+      // The runtime image's Alpine packages (ffmpeg, ca-certificates). The
+      // dockerfile manager extracts the `apk add pkg=ver` pins but skips them
+      // until it is told which repository to read; it does not derive that
+      // from the base image. Keep `branch` in step with the python image's
+      // alpineX.Y suffix, and `arch` with the platform docker.yaml builds.
+      matchFileNames: ['Dockerfile'],
+      matchDatasources: ['apk'],
+      registryUrls: [
+        'https://dl-cdn.alpinelinux.org/alpine?branch=v3.24&components=main,community&arch=x86_64',
+      ],
+      // Alpine's index only carries the newest build of a package: the moment
+      // a new one is published, the old pin no longer installs and the image
+      // build fails. Waiting out minimumReleaseAge would keep it broken.
+      minimumReleaseAge: '0 days',
+    },
+    {
+      // gallery-dl and ffmpeg ship inside the image, so a bump is a
+      // user-facing change: commit it as fix(deps) so git-cliff lists it in
+      // the changelog (cliff.toml skips chore(deps)). Once it lands on main,
+      // .github/workflows/release.yml cuts a patch release.
+      matchPackageNames: ['gallery-dl', 'ffmpeg'],
+      semanticCommitType: 'fix',
     },
   ],
 }

@@ -44,9 +44,15 @@ RUN CGO_ENABLED=0 GOOS=linux go build -trimpath \
 # ---- 3. runtime: slim image + gallery-dl -------------------------------------
 FROM python:3.15.1-alpine3.24@sha256:54448f67d7c31c39e5cdd3ea2d6382395ce142806c284425f8e897d78a0465b3
 # gallery-dl is the runtime extractor; ffmpeg lets it mux some video sources.
-# Versions are pinned for reproducibility — bump deliberately, not by drift.
+# Versions are pinned for reproducibility; Renovate bumps them (the apk pins
+# through the registry rule in renovate.json5, gallery-dl through the
+# annotation below). A gallery-dl or ffmpeg bump landing on main cuts a patch
+# release (.github/workflows/release.yml), which reads both pins from this
+# file: keep the `ARG GALLERY_DL_VERSION=` and `ffmpeg=` forms.
+# renovate: datasource=pypi depName=gallery-dl
+ARG GALLERY_DL_VERSION=1.32.3
 RUN apk add --no-cache ffmpeg=8.1.3-r0 ca-certificates=20261020-r0 \
-    && pip install --no-cache-dir gallery-dl==1.32.3 \
+    && pip install --no-cache-dir "gallery-dl==${GALLERY_DL_VERSION}" \
     && adduser -D -h /app loupe
 WORKDIR /app
 COPY --from=backend /out/loupe /usr/local/bin/loupe

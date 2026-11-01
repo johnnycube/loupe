@@ -2,6 +2,13 @@
 
 All notable changes to this project are documented here.
 Format: Keep a Changelog. Versioning: Semantic Versioning.
+## [1.0.4] - 2026-11-01
+
+### Fixed
+- Update dependency gallery-dl to v1.32.18 (#86) (deps)
+
+### CI
+- Release only after check and Docker pass on the commit
 ## [1.0.3] - 2026-11-01
 
 ### Fixed

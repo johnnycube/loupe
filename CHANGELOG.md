@@ -2,6 +2,17 @@
 
 All notable changes to this project are documented here.
 Format: Keep a Changelog. Versioning: Semantic Versioning.
+## [1.0.3] - 2026-11-01
+
+### Fixed
+- Finish the SvelteKit 3 migration (frontend)
+- Update module modernc.org/sqlite to v1.61.0 (deps)
+
+### Build
+- Let Renovate bump gallery-dl and ffmpeg in the image
+
+### CI
+- Cut a patch release when gallery-dl or ffmpeg is bumped
 ## [1.0.2] - 2026-10-19
 
 ### Changed

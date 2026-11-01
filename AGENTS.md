@@ -50,7 +50,8 @@ what it does and how it's deployed.
   (JSON Content-Type + Host/Origin checks); new endpoints must follow it.
 - Item URLs/metadata come from remote sites via gallery-dl: treat as untrusted.
 - `.github/workflows/release.yml` cuts a patch release when the Dockerfile's
-  `ARG GALLERY_DL_VERSION=` or `ffmpeg=` pin changes on main, unless unreleased
+  `ARG GALLERY_DL_VERSION=` or `ffmpeg=` pin changes on main and check + Docker
+  have passed on that commit, unless unreleased
   `feat`/breaking commits exist; it parses those two pin forms, so keep them
   (see CONTRIBUTING.md "Releases").
 - The UI is mobile-first; desktop-only styling lives in `@media(min-width:900px)`

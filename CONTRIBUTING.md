@@ -50,8 +50,9 @@ regenerates CHANGELOG.md. A pushed tag makes `docker.yaml` build, push and sign
   `git tag -s vX.Y.Z -m vX.Y.Z`, then push both in one go
   (`git push --atomic origin main vX.Y.Z`) and publish the GitHub release.
 - **Automatic:** when a gallery-dl or ffmpeg bump in the Dockerfile lands on
-  main (Renovate commits these as `fix(deps)`), `.github/workflows/release.yml`
-  cuts the next patch release the same way, signing the commit and tag with
+  main (Renovate commits these as `fix(deps)`) and both `check` and `Docker`
+  have passed on that commit, `.github/workflows/release.yml` cuts the next
+  patch release of it the same way, signing the commit and tag with
   gitsign (keyless) and dispatching the image build. It compares the pins with
   the latest tag, so a manual release that already includes the bump makes it
   a no-op. It skips (with a notice on the run) while main has unreleased `feat`

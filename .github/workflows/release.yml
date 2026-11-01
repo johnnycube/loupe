@@ -1,9 +1,10 @@
 # Automatic patch releases for the image's runtime dependencies.
 #
 # The image ships gallery-dl and ffmpeg, pinned in the Dockerfile and bumped by
-# Renovate (renovate.json5). When a push to main leaves either pin different
-# from the latest release tag, this workflow cuts the next patch release the
-# way a manual one is made:
+# Renovate (renovate.json5). Once both CI workflows (check and Docker) have
+# passed on a push to main, and that commit leaves either pin different from
+# the latest release tag, this workflow cuts the next patch release of exactly
+# that commit, the way a manual one is made:
 #   1. regenerate CHANGELOG.md with git-cliff, commit `chore(release): vX.Y.Z`,
 #   2. tag that commit (annotated, signed) and push both atomically,
 #   3. dispatch docker.yaml on the tag (build, push and sign the image),
@@ -33,15 +34,23 @@
 # main must stay pushable by GITHUB_TOKEN: a branch protection rule or ruleset
 # on main needs a bypass for GitHub Actions.
 #
+# Waiting for CI: the workflow runs when check or Docker completes on main, so
+# it runs twice per push. The gate job releases nothing until both have passed
+# on that commit; whichever finishes second gets the release going. A failed
+# workflow blocks the release until a re-run passes. If main has moved on by
+# then, the newer commit's CI run does the release instead.
+#
 # If a run fails after the push, re-running it is a no-op (the tag now exists);
 # finish by hand with `gh workflow run docker.yaml --ref vX.Y.Z` and
 # `gh release create vX.Y.Z --verify-tag`.
 name: release
 
 on:
-  push:
+  # zizmor: ignore[dangerous-triggers] -- the gate admits only push runs on main of this repository; no pull request code or artifacts are ever used
+  workflow_run:
+    workflows: [check, Docker]
+    types: [completed]
     branches: [main]
-    paths: [Dockerfile]
 
 permissions:
   contents: read
@@ -53,7 +62,43 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  gate:
+    # A pushed commit on main of this repository (not a pull request from a
+    # fork's "main", not the weekly scheduled check) whose run passed.
+    if: >-
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'push' &&
+      github.event.workflow_run.head_branch == 'main' &&
+      github.event.workflow_run.head_repository.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      actions: read  # list the CI runs of the commit
+    outputs:
+      green: ${{ steps.green.outputs.green }}
+    steps:
+      - name: Both CI workflows passed on this commit
+        id: green
+        env:
+          GH_TOKEN: ${{ github.token }}
+          HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          for wf in check.yml docker.yaml; do
+            passed=$(gh run list --repo "$GITHUB_REPOSITORY" --workflow "$wf" \
+              --commit "$HEAD_SHA" --event push --json conclusion \
+              --jq 'map(select(.conclusion == "success")) | length')
+            if [ "$passed" -eq 0 ]; then
+              echo "${wf} has not passed on ${HEAD_SHA} (yet); its completion runs this workflow again."
+              echo "green=false" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+          done
+          echo "check and Docker both passed on ${HEAD_SHA}."
+          echo "green=true" >> "$GITHUB_OUTPUT"
+
   patch-release:
+    needs: gate
+    if: needs.gate.outputs.green == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     permissions:
@@ -69,10 +114,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          # Release main as it is now rather than the triggering commit, so a
-          # queued or re-run job never pushes behind a newer main.
-          ref: main
-          fetch-depth: 0  # tags and history for git describe and git-cliff
+          # The commit CI passed on, never a newer main.
+          ref: ${{ github.event.workflow_run.head_sha }}
+          fetch-depth: 0  # tags, origin/main and history for git describe and git-cliff
           persist-credentials: false
 
       - name: Compare the pins with the latest release
@@ -113,7 +157,17 @@ jobs:
           )
           blocking=$(sed '/^$/d' <<<"$blocking" | sort -u)
 
-          if [[ $(git log -1 --format=%s HEAD) == 'chore(release):'* ]]; then
+          released_in=$(git tag --contains HEAD --list 'v*' | sed -n 1p)
+          main_tip=$(git rev-parse refs/remotes/origin/main)
+
+          if [ -n "$released_in" ]; then
+            # The other CI workflow's run got here first.
+            echo "This commit is already released in ${released_in}: nothing to do."
+            echo "release=false" >> "$GITHUB_OUTPUT"
+          elif [ "$main_tip" != "$(git rev-parse HEAD)" ]; then
+            echo "main has moved on to ${main_tip}; that commit's CI run decides instead."
+            echo "release=false" >> "$GITHUB_OUTPUT"
+          elif [[ $(git log -1 --format=%s HEAD) == 'chore(release):'* ]]; then
             echo "HEAD is already a release commit: nothing to do."
             echo "release=false" >> "$GITHUB_OUTPUT"
           elif [ "$current" = "$released" ]; then
@@ -148,12 +202,12 @@ jobs:
           cache: false  # a release job restores nothing another run could have written
 
       # gitsign from `go install` (checked against the Go checksum database),
-      # git-cliff from PyPI; both at the versions pinned above.
+      # git-cliff from PyPI; both at the versions pinned above. git calls
+      # gitsign by absolute path, so nothing is added to GITHUB_PATH.
       - name: Install gitsign and git-cliff
         if: steps.decide.outputs.release == 'true'
         run: |
           go install "github.com/sigstore/gitsign@${GITSIGN_VERSION}"
-          echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
           pipx install "git-cliff==${GIT_CLIFF_VERSION}"
 
       - name: Commit, tag and push
@@ -166,7 +220,7 @@ jobs:
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git config gpg.format x509
-          git config gpg.x509.program gitsign
+          git config gpg.x509.program "$(go env GOPATH)/bin/gitsign"
           git config commit.gpgsign true
           git config tag.gpgsign true
 

@@ -50,7 +50,7 @@ FROM python:3.15.1-alpine3.24@sha256:54448f67d7c31c39e5cdd3ea2d6382395ce142806c2
 # release (.github/workflows/release.yml), which reads both pins from this
 # file: keep the `ARG GALLERY_DL_VERSION=` and `ffmpeg=` forms.
 # renovate: datasource=pypi depName=gallery-dl
-ARG GALLERY_DL_VERSION=1.32.3
+ARG GALLERY_DL_VERSION=1.32.18
 RUN apk add --no-cache ffmpeg=8.1.3-r0 ca-certificates=20261020-r0 \
     && pip install --no-cache-dir "gallery-dl==${GALLERY_DL_VERSION}" \
     && adduser -D -h /app loupe

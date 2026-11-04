@@ -11,7 +11,7 @@ require (
 	github.com/go-sql-driver/mysql v1.10.1
 	github.com/jackc/pgx/v5 v5.12.0
 	github.com/pressly/goose/v3 v3.29.0
-	modernc.org/sqlite v1.61.0
+	modernc.org/sqlite v1.61.1
 )
 
 require (

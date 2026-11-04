@@ -2,6 +2,11 @@
 
 All notable changes to this project are documented here.
 Format: Keep a Changelog. Versioning: Semantic Versioning.
+## [1.0.5] - 2026-11-04
+
+### Fixed
+- Update module github.com/jackc/pgx/v5 to v5.12.0 (#94) (deps)
+- Update dependency gallery-dl to v1.32.19 (#95) (deps)
 ## [1.0.4] - 2026-11-01
 
 ### Fixed

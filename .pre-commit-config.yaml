@@ -42,7 +42,7 @@ repos:
 
   # GitHub Actions workflow audit (template injection, unpinned actions, ...)
   - repo: https://github.com/zizmorcore/zizmor-pre-commit
-    rev: v1.31.1
+    rev: v1.32.0
     hooks:
       - id: zizmor
 

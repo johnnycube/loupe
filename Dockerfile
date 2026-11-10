@@ -42,7 +42,7 @@ RUN CGO_ENABLED=0 GOOS=linux go build -trimpath \
     -o /out/loupe .
 
 # ---- 3. runtime: slim image + gallery-dl -------------------------------------
-FROM python:3.15.2-alpine3.24@sha256:20a82dbc2783112ddb91d1534603f802d222a3e63e593cd002eb2ac534e70211
+FROM python:3.15.2-alpine3.24@sha256:a0f2e268f2ce8f3709611a90054ec6a8ae31f6251f5896b8648b9bb99835e30a
 # gallery-dl is the runtime extractor; ffmpeg lets it mux some video sources.
 # Versions are pinned for reproducibility; Renovate bumps them (the apk pins
 # through the registry rule in renovate.json5, gallery-dl through the

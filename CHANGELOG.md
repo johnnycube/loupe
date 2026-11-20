@@ -2,6 +2,15 @@
 
 All notable changes to this project are documented here.
 Format: Keep a Changelog. Versioning: Semantic Versioning.
+## [1.0.6] - 2026-11-20
+
+### Fixed
+- Update module modernc.org/sqlite to v1.61.1 (#96) (deps)
+- Update module modernc.org/sqlite to v1.62.0 (deps)
+- Update module github.com/pressly/goose/v3 to v3.30.0 (#111) (deps)
+- Update module github.com/jackc/pgx/v5 to v5.13.0 (#116) (deps)
+- Update module github.com/pressly/goose/v3 to v3.30.1 (deps)
+- Update dependency gallery-dl to v1.32.20 (#122) (deps)
 ## [1.0.5] - 2026-11-04
 
 ### Fixed

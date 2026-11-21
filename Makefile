@@ -19,7 +19,7 @@ COVER_MIN ?= 30
 # renovate: datasource=go depName=github.com/golangci/golangci-lint/v2
 GOLANGCI_VERSION ?= v2.15.0
 # renovate: datasource=go depName=golang.org/x/vuln
-GOVULNCHECK_VERSION ?= v1.9.0
+GOVULNCHECK_VERSION ?= v1.10.0
 # renovate: datasource=go depName=github.com/zricethezav/gitleaks/v8
 GITLEAKS_VERSION ?= v8.30.1
 # renovate: datasource=go depName=github.com/fleetlint/fleetlint

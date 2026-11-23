@@ -9,7 +9,7 @@
 
 services:
   postgres:
-    image: postgres:18
+    image: postgres:19
     container_name: loupe-postgres
     environment:
       POSTGRES_USER: loupe

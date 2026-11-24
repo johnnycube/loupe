@@ -18,6 +18,9 @@
   // Wait a few days after a release before proposing it: lets yanked versions
   // and day-one regressions (or compromised packages) get caught upstream first.
   minimumReleaseAge: '3 days',
+  // Digest pins and lock file maintenance carry no release timestamp; without
+  // this their renovate/stability-days status stays pending forever.
+  minimumReleaseAgeBehaviour: 'timestamp-optional',
 
   // Keep go.sum tidy after Go updates; bump pre-commit hook revisions too.
   postUpdateOptions: ['gomodTidy'],

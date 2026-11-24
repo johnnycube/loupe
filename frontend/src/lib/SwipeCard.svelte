@@ -93,8 +93,10 @@
     rel="noopener"
     title="Open original image"
     onpointerdown={(e) => e.stopPropagation()}
-    onclick={(e) => e.stopPropagation()}>↗ original</a
+    onclick={(e) => e.stopPropagation()}
   >
+    ↗ original
+  </a>
   {#if item.gone}<div class="cardtag">stale source</div>{/if}
   <div class="stamp keep" style="opacity:{keepOp}">KEEP</div>
   <div class="stamp pass" style="opacity:{passOp}">PASS</div>

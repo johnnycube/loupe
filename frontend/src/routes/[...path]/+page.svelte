@@ -271,9 +271,9 @@
 
   <header class="topbar">
     <div>
-      <span class="mark">Loupe<span class="dot">.</span></span><span class="headcount"
-        ><b>{counts.new}</b> to review</span
-      >
+      <span class="mark">Loupe<span class="dot">.</span></span><span class="headcount">
+        <b>{counts.new}</b> to review
+      </span>
     </div>
     <div class="topactions">
       <button
@@ -281,9 +281,9 @@
         onclick={refresh}
         aria-label="Check for new images"
       >
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-          ><path d="M21 12a9 9 0 1 1-2.64-6.36M21 4v5h-5" /></svg
-        >
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M21 12a9 9 0 1 1-2.64-6.36M21 4v5h-5" />
+        </svg>
       </button>
       <button
         class="iconbtn"
@@ -291,9 +291,9 @@
         onclick={() => go('about')}
         aria-label="About Loupe"
       >
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-          ><circle cx="12" cy="12" r="9" /><path d="M12 11v5M12 7.5v.5" /></svg
-        >
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="9" /><path d="M12 11v5M12 7.5v.5" />
+        </svg>
       </button>
     </div>
   </header>
@@ -318,21 +318,21 @@
             disabled={!S.history.length}
             onclick={undo}
           >
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-              ><path d="M9 14L4 9l5-5" /><path d="M4 9h11a5 5 0 0 1 0 10h-4" /></svg
-            >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M9 14L4 9l5-5" /><path d="M4 9h11a5 5 0 0 1 0 10h-4" />
+            </svg>
           </button>
           <button class="act big pass" aria-label="Pass" onclick={() => card?.fly('bad')}>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
-              ><path d="M6 6l12 12M18 6L6 18" /></svg
-            >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+              <path d="M6 6l12 12M18 6L6 18" />
+            </svg>
           </button>
           <button class="act big keep" aria-label="Keep" onclick={() => card?.fly('good')}>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-              ><path
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path
                 d="M12 21s-7.5-4.6-10-9.3C.4 8.4 2 5 5.2 5 7.3 5 8.7 6.2 12 9c3.3-2.8 4.7-4 6.8-4C22 5 23.6 8.4 22 11.7 19.5 16.4 12 21 12 21z"
-              /></svg
-            >
+              />
+            </svg>
           </button>
         </div>
         <div class="hint">
@@ -370,25 +370,29 @@
             <a
               class="btn"
               href="/api/selects.txt?scope={encodeURIComponent(S.selectScope)}"
-              download>URL list</a
-            ><a
-              class="btn primary"
-              href="/api/selects.zip?scope={encodeURIComponent(S.selectScope)}">Download ZIP</a
+              download
             >
+              URL list
+            </a><a
+              class="btn primary"
+              href="/api/selects.zip?scope={encodeURIComponent(S.selectScope)}"
+            >
+              Download ZIP
+            </a>
           </div>
           <div class="sheet" style="margin-top:14px">
             {#each S.selects as g (g.id)}
               <div class="cell" class:stale={g.gone}>
-                <button class="rm" aria-label="Remove" onclick={() => unselect(g.id)}
-                  ><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"
-                    ><path d="M6 6l12 12M18 6L6 18" /></svg
-                  ></button
-                >
+                <button class="rm" aria-label="Remove" onclick={() => unselect(g.id)}>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6">
+                    <path d="M6 6l12 12M18 6L6 18" />
+                  </svg>
+                </button>
                 {#if isVid(g.url)}<span class="vidbadge">▶ video</span>{/if}
                 {#if g.gone}<span class="stale-tag">stale</span>{/if}
-                <a href={g.url} target="_blank" rel="noopener"
-                  ><div class="mat"><img src={g.sample} loading="lazy" alt="" /></div></a
-                >
+                <a href={g.url} target="_blank" rel="noopener">
+                  <div class="mat"><img src={g.sample} loading="lazy" alt="" /></div>
+                </a>
                 <span class="num">{g.label || ''}</span>
               </div>
             {/each}
@@ -420,8 +424,10 @@
           <div class="twocol">
             <input placeholder="description (optional)" bind:value={colDesc} /><button
               class="btn primary"
-              onclick={submitCollection}>Create</button
+              onclick={submitCollection}
             >
+              Create
+            </button>
           </div>
         </div>
         <div class="wlist">
@@ -436,34 +442,40 @@
                   <span class="badge n">{c.counts.new}</span><button
                     class="badge g asbtn"
                     title="View kept in selects"
-                    onclick={() => selectsScoped('collection:' + c.id)}>{c.counts.good}</button
-                  >{#if c.counts.gone}<span class="badge stale">{c.counts.gone}</span>{/if}
+                    onclick={() => selectsScoped('collection:' + c.id)}
+                  >
+                    {c.counts.good}
+                  </button>{#if c.counts.gone}<span class="badge stale">{c.counts.gone}</span>{/if}
                 </div>
               </div>
               <div class="chips">
                 {#if c.members && c.members.length}
-                  {#each c.members as m (m.id)}<span class="chip"
-                      >{m.name}<button
+                  {#each c.members as m (m.id)}<span class="chip">
+                      {m.name}<button
                         aria-label="remove"
-                        onclick={() => member(c.id, m.id, 'remove')}>×</button
-                      ></span
-                    >{/each}
+                        onclick={() => member(c.id, m.id, 'remove')}
+                      >
+                        ×
+                      </button>
+                    </span>{/each}
                 {:else}<span class="sub">no sources yet</span>{/if}
               </div>
               <div class="memberadd">
-                <select bind:value={memberSel[c.id]}
-                  >{#each avail(c) as s (s.id)}<option value={s.id}>{s.name}</option>{/each}</select
-                >
+                <select bind:value={memberSel[c.id]}>
+                  {#each avail(c) as s (s.id)}<option value={s.id}>{s.name}</option>{/each}
+                </select>
                 <button
                   class="btn"
                   onclick={() => member(c.id, memberSel[c.id] ?? avail(c)[0]?.id, 'add')}
-                  disabled={!avail(c).length}>Add</button
+                  disabled={!avail(c).length}
                 >
+                  Add
+                </button>
               </div>
               <div class="rowactions">
-                <button class="btn ghost" onclick={() => removeCollection(c.id)}
-                  >Delete collection</button
-                >
+                <button class="btn ghost" onclick={() => removeCollection(c.id)}>
+                  Delete collection
+                </button>
               </div>
             </div>
           {/each}
@@ -498,20 +510,22 @@
             placeholder="inline gallery-dl config (optional, JSON) · e.g. &#123;&quot;extractor&quot;:&#123;&quot;rule34&quot;:&#123;&quot;api-key&quot;:&quot;…&quot;,&quot;user-id&quot;:&quot;…&quot;&#125;&#125;&#125;"
             bind:value={addCfgJson}></textarea>
           {#if S.configs.length}
-            <label class="cfgpick"
-              >shared config
-              <select bind:value={addCfgId}
-                ><option value="">none</option>{#each S.configs as c (c.id)}<option value={c.id}
-                    >{c.name}</option
-                  >{/each}</select
-              >
+            <label class="cfgpick">
+              shared config
+              <select bind:value={addCfgId}>
+                <option value="">none</option>{#each S.configs as c (c.id)}<option value={c.id}>
+                    {c.name}
+                  </option>{/each}
+              </select>
             </label>
           {/if}
           <div class="twocol">
             <input placeholder="description (optional)" bind:value={addDesc} /><button
               class="btn primary"
-              onclick={submitAdd}>Add</button
+              onclick={submitAdd}
             >
+              Add
+            </button>
           </div>
         </div>
         <div class="wlist">
@@ -532,19 +546,24 @@
                     bind:value={editCfgJson}
                     placeholder="inline gallery-dl config (optional, JSON)"></textarea>
                   {#if S.configs.length}
-                    <label class="cfgpick"
-                      >shared config
-                      <select bind:value={editCfgId}
-                        ><option value="">none</option>{#each S.configs as c (c.id)}<option
-                            value={c.id}>{c.name}</option
-                          >{/each}</select
-                      >
+                    <label class="cfgpick">
+                      shared config
+                      <select bind:value={editCfgId}>
+                        <option value="">none</option>{#each S.configs as c (c.id)}<option
+                            value={c.id}
+                          >
+                            {c.name}
+                          </option>{/each}
+                      </select>
                     </label>
                   {/if}
                   <input bind:value={editDesc} placeholder="description (optional)" />
                   <div class="twocol">
-                    <button class="btn ghost" onclick={() => (S.editing = null)}>Cancel</button
-                    ><button class="btn primary" onclick={() => submitEdit(w.id)}>Save</button>
+                    <button class="btn ghost" onclick={() => (S.editing = null)}>
+                      Cancel
+                    </button><button class="btn primary" onclick={() => submitEdit(w.id)}>
+                      Save
+                    </button>
                   </div>
                 </div>
               </div>
@@ -555,8 +574,10 @@
                     <button
                       class="lbl aslink"
                       onclick={() => reviewSource(w.id)}
-                      title="Review this source">{w.name}</button
+                      title="Review this source"
                     >
+                      {w.name}
+                    </button>
                     {#if w.description}<div class="desc">{w.description}</div>{/if}
                     <div class="url">{w.url}</div>
                     {#if w.configId}<div class="cfg">
@@ -566,16 +587,21 @@
                     {#if w.configJson}<div class="cfg">⚙ inline config</div>{/if}
                     {#if w.lastError}<div class="err">{w.lastError}</div>{/if}
                     {#if w.collections && w.collections.length}<div class="colchips">
-                        {#each w.collections as c (c.id)}<span class="colchip">{c.name}</span
-                          >{/each}
+                        {#each w.collections as c (c.id)}<span class="colchip">
+                            {c.name}
+                          </span>{/each}
                       </div>{/if}
                   </div>
                   <div class="badges">
                     <span class="badge n">{w.counts.new}</span><button
                       class="badge g asbtn"
                       title="View kept in selects"
-                      onclick={() => selectsScoped('source:' + w.id)}>{w.counts.good}</button
-                    >{#if w.counts.gone}<span class="badge stale">{w.counts.gone}</span>{/if}
+                      onclick={() => selectsScoped('source:' + w.id)}
+                    >
+                      {w.counts.good}
+                    </button>{#if w.counts.gone}<span class="badge stale">
+                        {w.counts.gone}
+                      </span>{/if}
                   </div>
                 </div>
                 <div class="rowactions">
@@ -583,11 +609,12 @@
                     class="btn ghost"
                     onclick={() => rescan(w.id)}
                     disabled={rescanning.has(w.id)}
-                    >{rescanning.has(w.id) ? 'Rescanning…' : 'Rescan'}</button
                   >
-                  {#if w.counts.gone}<button class="btn ghost" onclick={() => purgeStale(w.id)}
-                      >Clear stale</button
-                    >{/if}
+                    {rescanning.has(w.id) ? 'Rescanning…' : 'Rescan'}
+                  </button>
+                  {#if w.counts.gone}<button class="btn ghost" onclick={() => purgeStale(w.id)}>
+                      Clear stale
+                    </button>{/if}
                   <button class="btn ghost" onclick={() => startEdit(w)}>Edit</button>
                   <button class="btn ghost" onclick={() => removeSource(w.id)}>Remove</button>
                 </div>
@@ -618,9 +645,9 @@
               placeholder="gallery-dl config (JSON) · e.g. &#123;&quot;extractor&quot;:&#123;&quot;reddit&quot;:&#123;&quot;cookies&quot;:&#123;…&#125;&#125;&#125;&#125;"
               bind:value={cfgJson}></textarea>
             <div class="twocol">
-              <span class="sub"
-                >pick it via the “shared config” field when adding or editing a source</span
-              ><button class="btn primary" onclick={submitConfig}>Create</button>
+              <span class="sub">
+                pick it via the “shared config” field when adding or editing a source
+              </span><button class="btn primary" onclick={submitConfig}>Create</button>
             </div>
           </div>
           <div class="wlist">
@@ -635,11 +662,11 @@
                       bind:value={editCfgJsonBody}
                       placeholder="gallery-dl config (JSON)"></textarea>
                     <div class="twocol">
-                      <button class="btn ghost" onclick={() => (S.editingConfig = null)}
-                        >Cancel</button
-                      ><button class="btn primary" onclick={() => submitEditConfig(c.id)}
-                        >Save</button
-                      >
+                      <button class="btn ghost" onclick={() => (S.editingConfig = null)}>
+                        Cancel
+                      </button><button class="btn primary" onclick={() => submitEditConfig(c.id)}>
+                        Save
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -685,8 +712,10 @@
           <dt>Commit</dt>
           <dd>
             <code>{S.version?.commit || 'unknown'}</code>{#if S.version?.dirty}<span
-                class="dirty-tag">modified</span
-              >{/if}
+                class="dirty-tag"
+              >
+                modified
+              </span>{/if}
           </dd>
           <dt>Built</dt>
           <dd>{fmtBuildTime(S.version?.buildTime)}</dd>
@@ -699,20 +728,20 @@
 
   <nav class="bottomnav">
     <button class="navbtn" class:active={S.view === 'review'} onclick={() => go('review')}>
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
-        ><rect x="4" y="3" width="13" height="17" rx="2" /><path
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+        <rect x="4" y="3" width="13" height="17" rx="2" /><path
           d="M20 7v12a2 2 0 0 1-2 2H8"
           opacity=".5"
-        /></svg
-      >
+        />
+      </svg>
       Review{#if counts.new}<span class="nbadge">{counts.new}</span>{/if}
     </button>
     <button class="navbtn" class:active={S.view === 'selects'} onclick={() => go('selects')}>
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
-        ><path
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+        <path
           d="M12 21s-7.5-4.6-10-9.3C.4 8.4 2 5 5.2 5 7.3 5 8.7 6.2 12 9c3.3-2.8 4.7-4 6.8-4C22 5 23.6 8.4 22 11.7 19.5 16.4 12 21 12 21z"
-        /></svg
-      >
+        />
+      </svg>
       Selects{#if counts.good}<span class="nbadge">{counts.good}</span>{/if}
     </button>
     <button
@@ -720,17 +749,17 @@
       class:active={S.view === 'collections'}
       onclick={() => go('collections')}
     >
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
-        ><path d="M12 3l9 5-9 5-9-5 9-5z" /><path d="M3 13l9 5 9-5" opacity=".5" /></svg
-      >
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+        <path d="M12 3l9 5-9 5-9-5 9-5z" /><path d="M3 13l9 5 9-5" opacity=".5" />
+      </svg>
       Collections
     </button>
     <button class="navbtn" class:active={S.view === 'sources'} onclick={() => go('sources')}>
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
-        ><circle cx="6" cy="6" r="2" /><circle cx="6" cy="18" r="2" /><path
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+        <circle cx="6" cy="6" r="2" /><circle cx="6" cy="18" r="2" /><path
           d="M11 6h9M11 18h9M11 12h9"
-        /></svg
-      >
+        />
+      </svg>
       Sources
     </button>
   </nav>
@@ -743,9 +772,9 @@
       <button class="lb-backdrop" aria-label="Close full screen" onclick={() => (zoom = false)}
       ></button>
       <button class="lb-close" aria-label="Close" onclick={() => (zoom = false)}>
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
-          ><path d="M6 6l12 12M18 6L6 18" /></svg
-        >
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+          <path d="M6 6l12 12M18 6L6 18" />
+        </svg>
       </button>
       <div class="lb-stage">
         {#key current.id}
@@ -777,21 +806,21 @@
       </div>
       <div class="lb-bar">
         <button class="act mid undo" aria-label="Undo" disabled={!S.history.length} onclick={undo}>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-            ><path d="M9 14L4 9l5-5" /><path d="M4 9h11a5 5 0 0 1 0 10h-4" /></svg
-          >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M9 14L4 9l5-5" /><path d="M4 9h11a5 5 0 0 1 0 10h-4" />
+          </svg>
         </button>
         <button class="act big pass" aria-label="Pass" onclick={() => vote('bad')}>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
-            ><path d="M6 6l12 12M18 6L6 18" /></svg
-          >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+            <path d="M6 6l12 12M18 6L6 18" />
+          </svg>
         </button>
         <button class="act big keep" aria-label="Keep" onclick={() => vote('good')}>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-            ><path
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path
               d="M12 21s-7.5-4.6-10-9.3C.4 8.4 2 5 5.2 5 7.3 5 8.7 6.2 12 9c3.3-2.8 4.7-4 6.8-4C22 5 23.6 8.4 22 11.7 19.5 16.4 12 21 12 21z"
-            /></svg
-          >
+            />
+          </svg>
         </button>
       </div>
       <div class="lb-hint">

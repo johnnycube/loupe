@@ -2,6 +2,11 @@
 
 All notable changes to this project are documented here.
 Format: Keep a Changelog. Versioning: Semantic Versioning.
+## [1.0.7] - 2026-11-24
+
+### Fixed
+- Update module github.com/go-sql-driver/mysql to v1.10.2 (#127) (deps)
+- Update dependency gallery-dl to v1.32.21 (#136) (deps)
 ## [1.0.6] - 2026-11-20
 
 ### Fixed
